@@ -5,6 +5,8 @@ Launch the Brainwriter. See `agents/brainwriter.md`.
 ## What the Brainwriter Does
 
 1. **Reads all three Johns' complete outputs** including chains and temperature zone compliance
+   — and **Ratchet syntheses** from `$WORKSPACE/05.7-ratchet.md` as **pre-resolved ideas**
+   (build on them; do not re-debate them)
 2. **Generates seed usage report** — classifies every seed as hot/used/cold in the DB
 3. **Picks top 10 ideas** — favoring cross-zone diversity and hot seed lineage
 4. **Applies 2-3 operations to each** — Combine, Modify, Deepen, TRIZ Transform, Substitute

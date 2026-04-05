@@ -2,11 +2,16 @@
 
 Launch the Tension Analyzer. See `agents/tension-analyzer.md`.
 
+> **Scope:** Hot zones have already been resolved by the Dialectical Ratchet (Phase 5.7).
+> The Tension Analyzer focuses on **warm zones** from the Collision Map only.
+> Do not re-process hot zone collisions here.
+
 ## What It Receives
 
 - All Johns' outputs with temperature zone notes
 - Brainwriter's built ideas and cross-zone combinations
 - Hat Evaluation Pass results (Phase 6.5) — if run
+- Collision Map (`$WORKSPACE/05.5-collision-map.md`) — to identify which tensions are warm (not already resolved)
 
 ## What It Produces
 

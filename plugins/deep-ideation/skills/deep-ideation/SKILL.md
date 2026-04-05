@@ -27,14 +27,21 @@ Choose before starting. Ask the user if unclear.
 
 **LITE mode shortcuts:**
 - Skip ORCHESTRATE, DISTRIBUTE, BUILD, TENSION
+- Skip COLLISION MAP and RATCHET
 - Run only Innovator + Wild Card in SEED phase
 - Synthesizer outputs Idea Menu only (no experiments)
 
 **DEEP mode adds:**
 - Historian runs after DISCOVER (cross-session transfer)
+- Phase 5.5: Collision Map (all zones, max 3 hot)
+- Phase 5.7: Dialectical Ratchet (all hot zones, 3 cycles + full TRIZ principle application)
 - Phase 6.5: Hat Evaluation Pass (Six Hats on top 10 built ideas)
 - Round 2: Top 5 from Round 1 become new seeds for a focused second run
 - Web validation in Synthesizer (WebSearch)
+
+**STANDARD mode Collision Map + Ratchet behavior:**
+- Phase 5.5: Run Collision Map, cap at 2 hot zones
+- Phase 5.7: Run Ratchet on those hot zones, 2 cycles per zone
 
 ---
 
@@ -252,11 +259,13 @@ python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty
 | **John B** | PLASMA — every idea needs a cross-domain mechanism | Realist-start |
 | **John C** | ICE — every idea must pass feasibility check | Critic-start |
 
-### Synthesis Phase (sequential)
+### Collision + Synthesis Phase (sequential)
 | Agent | Role |
 |-------|------|
-| **Brainwriter** | Builds on top 10 Johns ideas; tracks hot/warm/cold seeds |
-| **Tension Analyzer** | Maps contradictions; Bridge ops; PMI |
+| **Collision Map** | Groups ideas by sub-problem, measures divergence, classifies zones (HOT/WARM/COLD) |
+| **Dialectical Ratchet** | Runs thesis→antithesis→synthesis cycles on hot zones with constraint locking |
+| **Brainwriter** | Builds on top 10 Johns ideas + Ratchet pre-resolved syntheses; tracks hot/warm/cold seeds |
+| **Tension Analyzer** | Maps warm-zone contradictions; Bridge ops; PMI. Hot zones already resolved by Ratchet — focus on warm zones |
 | **Synthesizer** | Hybrids, Anchored ICE scores, Idea Menu, Seed Bank |
 | **Brilliance Filter** | Evaluates top ideas against 7 brilliance questions; separates Brilliant (0-3) from Notable (2-4); writes pitch sentences; classifies durability |
 
@@ -270,12 +279,14 @@ python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty
 ## The Flow
 
 ```
-DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → BRILLIANCE → CONVERGE
-    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓            ↓           ↓
-  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored    Brilliant    Idea Menu
-  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu    Ideas     + Seed Bank
+DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → COLLISION MAP → RATCHET → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → BRILLIANCE → CONVERGE
+    ↓           ↓          ↓        ↓         ↓            ↓              ↓             ↓         ↓           ↓              ↓          ↓            ↓           ↓
+  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns       Classify      Thesis→   Brain-    Six Hats on    Warm      Anchored    Brilliant    Idea Menu
+  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral       Hot/Warm/    Antithesis  writer     Top 10 built  zones      ICE + Menu    Ideas     + Seed Bank
+                                                                        Cold         →Synth    [+Ratchet]                only
 ```
 
+*(Phase 5.5 Collision Map and Phase 5.7 Ratchet: STANDARD and DEEP only)*
 *(Phase 6.5 Hat Eval only in STANDARD and DEEP modes)*
 
 ---
@@ -317,6 +328,14 @@ See `phases/04-distribute.md` (second half). Assign triage-classified seeds to J
 
 See `phases/05-transform.md`. Launch 3 Johns with their temperature zone constraints.
 
+### Phase 5.5: COLLISION MAP (STANDARD + DEEP only)
+
+See `phases/05.5-collision-map.md`. Build disagreement map from all Johns' outputs. Classify zones: HOT / WARM / COLD. Route hot zones to Ratchet, warm zones to Tension Analyzer, cold zones pass through.
+
+### Phase 5.7: DIALECTICAL RATCHET (STANDARD + DEEP only)
+
+See `phases/05.7-ratchet.md`. Run thesis→antithesis→synthesis cycles on each HOT zone. Lock constraints each cycle. STANDARD: 2 cycles per zone (max 2 zones). DEEP: 3 cycles per zone (all zones). Ratchet syntheses passed to Brainwriter as pre-resolved ideas.
+
 ### Phase 6: BUILD
 
 See `phases/06-build.md`. Brainwriter reads all Johns, builds on top 10, tracks seed usage.
@@ -325,9 +344,9 @@ See `phases/06-build.md`. Brainwriter reads all Johns, builds on top 10, tracks 
 
 See `phases/06.5-hat-eval.md`. Run Six Thinking Hats on top 10 built ideas before Tension.
 
-### Phase 7: TENSION
+### Phase 7: TENSION (warm zones only)
 
-See `phases/07-tension.md`. Contradiction mapping, Bridge ops, PMI.
+See `phases/07-tension.md`. Contradiction mapping, Bridge ops, PMI. **Hot zones already resolved by the Ratchet — Tension Analyzer focuses on warm zones only.**
 
 ### Phase 8: SYNTHESIZE
 
@@ -355,6 +374,7 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 6. **Idea Menu is action-oriented**: Three buckets map directly to "what do I do first?"
 7. **Cross-session transfer**: Historian + Seed Bank means each session builds on all previous work.
 8. **Brilliance Filter catches what scoring misses**: ICE rewards feasible impact. Brilliance rewards structural insight — parsimony, surprise, inevitability. An idea that scores 6.0 on ICE but resolves the session's core contradiction in a single mechanism is more valuable than a 9.0 that's a well-executed known pattern.
+9. **Disagreement zones are the most valuable territory**: The Collision Map makes the skill spend its energy where agents disagreed most. Cold zones (consensus) are low novelty — hot zones (opposing mechanisms) are where the best ideas hide. The Ratchet turns the deepest disagreements into the strongest syntheses through dialectical pressure rather than assumption.
 
 ---
 
@@ -364,7 +384,10 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 - **Don't let Johns generate from scratch** — they transform SEEDS, not start fresh
 - **Don't give all Johns the same seeds** — temperature zones + different batches is what produces divergence
 - **Don't skip Seed Triage** — hot seeds are the signal; cold seeds might be hidden gems
-- **Don't skip Tension Analysis** — the Groan Zone is where the most surprising ideas emerge
+- **Don't skip the Collision Map** — cold zones tell you where the skill is being boring; hot zones tell you where the best ideas hide
+- **Don't compromise in the Ratchet** — if the synthesis is just "a bit of both," run another cycle. Compromise ≠ synthesis.
+- **Don't run the Ratchet on warm zones** — they don't have enough tension to produce interesting syntheses; route them to Tension Analyzer instead
+- **Don't skip Tension Analysis** — the Groan Zone is where the most surprising ideas emerge (warm zones still need bridging)
 - **Don't use generic ICE anchors** — calibrate to the session's specific root causes
 - **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
 - **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.
