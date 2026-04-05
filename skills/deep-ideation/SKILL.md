@@ -270,10 +270,10 @@ python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty
 ## The Flow
 
 ```
-DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → CONVERGE → BRILLIANCE
-    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓           ↓            ↓
-  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored   Idea Menu    Brilliant
-  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu  + Seed Bank   Ideas
+DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → BRILLIANCE → CONVERGE
+    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓            ↓           ↓
+  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored    Brilliant    Idea Menu
+  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu    Ideas     + Seed Bank
 ```
 
 *(Phase 6.5 Hat Eval only in STANDARD and DEEP modes)*
@@ -333,15 +333,15 @@ See `phases/07-tension.md`. Contradiction mapping, Bridge ops, PMI.
 
 See `phases/08-synthesize.md`. Hybrids, Anchored ICE, Idea Menu, web validation, Seed Bank.
 
-### Phase 9: CONVERGE
-
-See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2.
-
-### Phase 10: BRILLIANCE FILTER
+### Phase 9: BRILLIANCE FILTER
 
 See `phases/10-brilliance.md` and `agents/brilliance.md`. Runs in ALL modes (LITE, STANDARD, DEEP) — it's cheap, just a judgment pass on finished work.
 
-Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. Output appended to `$WORKSPACE/08-synthesize.md` as the final section the user reads.
+Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. Output appended to `$WORKSPACE/08-synthesize.md` — the Brilliant Ideas section informs the convergence decision.
+
+### Phase 10: CONVERGE
+
+See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2. Now informed by the Brilliance Filter's output.
 
 ---
 
