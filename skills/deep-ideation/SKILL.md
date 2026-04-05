@@ -21,9 +21,9 @@ Choose before starting. Ask the user if unclear.
 
 | Mode | When to Use | Phases Run | Agents | Expected Time |
 |------|------------|-----------|--------|--------------|
-| **LITE** | Quick problem, 30-min session, low stakes | 1 → 3 → 8 | Digger + 2 specialists + Synthesizer | Fast |
-| **STANDARD** | Default. Most problems. | 1 → 9 (all phases) | Full roster | Normal |
-| **DEEP** | High-stakes, complex, multi-stakeholder | 1 → 9 + Historian + 2nd iterative round | Full roster + Historian + Round 2 | Thorough |
+| **LITE** | Quick problem, 30-min session, low stakes | 1 → 3 → 8 → 10 | Digger + 2 specialists + Synthesizer + Brilliance | Fast |
+| **STANDARD** | Default. Most problems. | 1 → 10 (all phases) | Full roster | Normal |
+| **DEEP** | High-stakes, complex, multi-stakeholder | 1 → 10 + Historian + 2nd iterative round | Full roster + Historian + Round 2 | Thorough |
 
 **LITE mode shortcuts:**
 - Skip ORCHESTRATE, DISTRIBUTE, BUILD, TENSION
@@ -258,6 +258,7 @@ python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty
 | **Brainwriter** | Builds on top 10 Johns ideas; tracks hot/warm/cold seeds |
 | **Tension Analyzer** | Maps contradictions; Bridge ops; PMI |
 | **Synthesizer** | Hybrids, Anchored ICE scores, Idea Menu, Seed Bank |
+| **Brilliance Filter** | Evaluates top ideas against 7 brilliance questions; separates Brilliant (0-3) from Notable (2-4); writes pitch sentences; classifies durability |
 
 ### Support Agents
 | Agent | When | Role |
@@ -269,10 +270,10 @@ python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty
 ## The Flow
 
 ```
-DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → CONVERGE
-    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓           ↓
-  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored   Idea Menu
-  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu  + Seed Bank
+DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → CONVERGE → BRILLIANCE
+    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓           ↓            ↓
+  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored   Idea Menu    Brilliant
+  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu  + Seed Bank   Ideas
 ```
 
 *(Phase 6.5 Hat Eval only in STANDARD and DEEP modes)*
@@ -336,6 +337,12 @@ See `phases/08-synthesize.md`. Hybrids, Anchored ICE, Idea Menu, web validation,
 
 See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2.
 
+### Phase 10: BRILLIANCE FILTER
+
+See `phases/10-brilliance.md` and `agents/brilliance.md`. Runs in ALL modes (LITE, STANDARD, DEEP) — it's cheap, just a judgment pass on finished work.
+
+Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. Output appended to `$WORKSPACE/08-synthesize.md` as the final section the user reads.
+
 ---
 
 ## Why This Architecture Works
@@ -347,6 +354,7 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 5. **Anchored ICE prevents score drift**: Scores calibrated to THIS session's root causes are meaningful.
 6. **Idea Menu is action-oriented**: Three buckets map directly to "what do I do first?"
 7. **Cross-session transfer**: Historian + Seed Bank means each session builds on all previous work.
+8. **Brilliance Filter catches what scoring misses**: ICE rewards feasible impact. Brilliance rewards structural insight — parsimony, surprise, inevitability. An idea that scores 6.0 on ICE but resolves the session's core contradiction in a single mechanism is more valuable than a 9.0 that's a well-executed known pattern.
 
 ---
 
@@ -358,3 +366,5 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 - **Don't skip Seed Triage** — hot seeds are the signal; cold seeds might be hidden gems
 - **Don't skip Tension Analysis** — the Groan Zone is where the most surprising ideas emerge
 - **Don't use generic ICE anchors** — calibrate to the session's specific root causes
+- **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
+- **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.
