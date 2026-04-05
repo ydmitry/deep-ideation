@@ -271,10 +271,10 @@ python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty
 ## The Flow
 
 ```
-DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → CONVERGE → [9.5 STRESS-TEST] → BRILLIANCE
-    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓           ↓             ↓                  ↓
-  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored    Idea Menu    Confidence         Brilliant
-  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu  + Seed Bank   Adjusted             Ideas
+DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → [9.5 STRESS-TEST] → BRILLIANCE → CONVERGE
+    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓               ↓                  ↓           ↓
+  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored        Confidence         Brilliant    Idea Menu
+  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu       Adjusted             Ideas    + Seed Bank
 ```
 
 *(Phase 6.5 Hat Eval only in STANDARD and DEEP modes)*
@@ -335,11 +335,7 @@ See `phases/07-tension.md`. Contradiction mapping, Bridge ops, PMI.
 
 See `phases/08-synthesize.md`. Hybrids, Anchored ICE, Idea Menu, web validation, Seed Bank.
 
-### Phase 9: CONVERGE
-
-See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2.
-
-### Phase 9.5: STRESS-TEST (STANDARD + DEEP only)
+### Phase 9: STRESS-TEST (STANDARD + DEEP only)
 
 See `phases/09.5-stress-test.md` and `agents/stress-tester.md`. Skipped in LITE mode.
 
@@ -350,6 +346,10 @@ Runs adversarial attacks on the top ideas from the Idea Menu. In STANDARD: 2 rou
 See `phases/10-brilliance.md` and `agents/brilliance.md`. Runs in ALL modes (LITE, STANDARD, DEEP) — it's cheap, just a judgment pass on finished work.
 
 Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. In STANDARD and DEEP, also cross-references `confidence_adjusted` from the Stress Tester — battle-tested brilliant ideas are the session's strongest output. Output appended to `$WORKSPACE/08-synthesize.md` as the final section the user reads.
+
+### Phase 11: CONVERGE
+
+See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2. Now informed by both the Stress Test confidence scores and the Brilliance Filter's output.
 
 ---
 
