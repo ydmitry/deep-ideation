@@ -4,9 +4,9 @@ Launch the Brilliance Filter. See `agents/brilliance.md`.
 
 ## When to Run
 
-After Phase 9 (CONVERGE) or after Phase 8 (SYNTHESIZE) in LITE mode. Runs in ALL modes.
+After Phase 8 (SYNTHESIZE) produces the Idea Menu. Runs in ALL modes.
 
-This is the final output step — it appends the Brilliant Ideas section to the session deliverable.
+Brilliance runs BEFORE CONVERGE so it informs the decision tree — the user should know which ideas are structurally brilliant before choosing what to pursue.
 
 ## What It Receives
 
@@ -35,4 +35,4 @@ ICE rewards the best ideas within the expected solution space. Brilliance finds 
 
 ## Output Location
 
-Appended to `$WORKSPACE/08-synthesize.md` as the final section. The Brilliant Ideas section is the last thing the user reads.
+Appended to `$WORKSPACE/08-synthesize.md` as the final section before CONVERGE. The Brilliant Ideas section should leave the user with the clearest, sharpest ideas from the session — right before they decide what to pursue.
