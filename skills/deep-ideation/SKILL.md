@@ -21,9 +21,9 @@ Choose before starting. Ask the user if unclear.
 
 | Mode | When to Use | Phases Run | Agents | Expected Time |
 |------|------------|-----------|--------|--------------|
-| **LITE** | Quick problem, 30-min session, low stakes | 1 → 3 → 8 → 10 | Digger + 2 specialists + Synthesizer + Brilliance | Fast |
-| **STANDARD** | Default. Most problems. | 1 → 10 (all phases) | Full roster | Normal |
-| **DEEP** | High-stakes, complex, multi-stakeholder | 1 → 10 + Historian + 2nd iterative round | Full roster + Historian + Round 2 | Thorough |
+| **LITE** | Quick problem, 30-min session, low stakes | 1 → 3 → 8 → 9 → 10 | Digger + 2 specialists + Synthesizer + Brilliance | Fast |
+| **STANDARD** | Default. Most problems. | 1 → 10 (all phases, including 9.5) | Full roster + Stress Tester | Normal |
+| **DEEP** | High-stakes, complex, multi-stakeholder | 1 → 10 + Historian + 2nd iterative round | Full roster + Historian + Stress Tester + Round 2 | Thorough |
 
 **LITE mode shortcuts:**
 - Skip ORCHESTRATE, DISTRIBUTE, BUILD, TENSION
@@ -258,6 +258,7 @@ python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty
 | **Brainwriter** | Builds on top 10 Johns ideas; tracks hot/warm/cold seeds |
 | **Tension Analyzer** | Maps contradictions; Bridge ops; PMI |
 | **Synthesizer** | Hybrids, Anchored ICE scores, Idea Menu, Seed Bank |
+| **Stress Tester** | Adversarial red team: 2-3 attack rounds per idea; adjusts confidence scores; flags fatal flaws and surviving objections (STANDARD + DEEP only) |
 | **Brilliance Filter** | Evaluates top ideas against 7 brilliance questions; separates Brilliant (0-3) from Notable (2-4); writes pitch sentences; classifies durability |
 
 ### Support Agents
@@ -270,13 +271,14 @@ python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty
 ## The Flow
 
 ```
-DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → BRILLIANCE → CONVERGE
-    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓            ↓           ↓
-  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored    Brilliant    Idea Menu
-  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu    Ideas     + Seed Bank
+DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → CONVERGE → [9.5 STRESS-TEST] → BRILLIANCE
+    ↓           ↓          ↓        ↓         ↓            ↓          ↓           ↓              ↓          ↓           ↓             ↓                  ↓
+  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns    Brain-    Six Hats on    Groan    Anchored    Idea Menu    Confidence         Brilliant
+  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral    writer     Top 10 built   Zone     ICE + Menu  + Seed Bank   Adjusted             Ideas
 ```
 
 *(Phase 6.5 Hat Eval only in STANDARD and DEEP modes)*
+*(Phase 9.5 Stress-Test only in STANDARD and DEEP modes)*
 
 ---
 
@@ -333,15 +335,21 @@ See `phases/07-tension.md`. Contradiction mapping, Bridge ops, PMI.
 
 See `phases/08-synthesize.md`. Hybrids, Anchored ICE, Idea Menu, web validation, Seed Bank.
 
-### Phase 9: BRILLIANCE FILTER
+### Phase 9: CONVERGE
+
+See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2.
+
+### Phase 9.5: STRESS-TEST (STANDARD + DEEP only)
+
+See `phases/09.5-stress-test.md` and `agents/stress-tester.md`. Skipped in LITE mode.
+
+Runs adversarial attacks on the top ideas from the Idea Menu. In STANDARD: 2 rounds × top 5 ideas. In DEEP: 3 rounds × top 8 ideas. Each round targets a different fatal flaw category (market size, hidden assumption, dependency, timing, distribution, etc.). Adjusts each idea's confidence score and records the strongest surviving objection. Output saved to `$WORKSPACE/09.5-stress-test.md` and stress columns written to `ideas.csv`.
+
+### Phase 10: BRILLIANCE FILTER
 
 See `phases/10-brilliance.md` and `agents/brilliance.md`. Runs in ALL modes (LITE, STANDARD, DEEP) — it's cheap, just a judgment pass on finished work.
 
-Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. Output appended to `$WORKSPACE/08-synthesize.md` — the Brilliant Ideas section informs the convergence decision.
-
-### Phase 10: CONVERGE
-
-See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2. Now informed by the Brilliance Filter's output.
+Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. In STANDARD and DEEP, also cross-references `confidence_adjusted` from the Stress Tester — battle-tested brilliant ideas are the session's strongest output. Output appended to `$WORKSPACE/08-synthesize.md` as the final section the user reads.
 
 ---
 
@@ -355,6 +363,7 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 6. **Idea Menu is action-oriented**: Three buckets map directly to "what do I do first?"
 7. **Cross-session transfer**: Historian + Seed Bank means each session builds on all previous work.
 8. **Brilliance Filter catches what scoring misses**: ICE rewards feasible impact. Brilliance rewards structural insight — parsimony, surprise, inevitability. An idea that scores 6.0 on ICE but resolves the session's core contradiction in a single mechanism is more valuable than a 9.0 that's a well-executed known pattern.
+9. **Stress-tested confidence is earned, not guessed**: Each `confidence_adjusted` score has a full trail — what was attacked, how the idea responded, what survived. An idea that held up under adversarial pressure is qualitatively different from one that was never tested. The strongest outputs are ideas that are both brilliant and battle-tested.
 
 ---
 
@@ -368,3 +377,5 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 - **Don't use generic ICE anchors** — calibrate to the session's specific root causes
 - **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
 - **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.
+- **Don't trust unearned confidence scores** — if an idea wasn't stress-tested, its confidence is a guess. In STANDARD and DEEP modes, `confidence_adjusted` is the number to use, not the raw ICE confidence.
+- **Don't use strawman attacks in Stress Test** — the point is genuine pressure. An attack the idea can trivially deflect tells you nothing.

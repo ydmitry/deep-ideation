@@ -43,16 +43,29 @@ For each Brilliant idea, classify:
 | **Window** | Works now but window closes | "Post-layoff anonymity works while talent is displaced — shrinks as market recovers" |
 | **Catalytic** | Unlocks other ideas once built | "Ignorance Manifesto changes the culture, making every subsequent tool more trustworthy" |
 
+## Stress Test Integration
+
+If the session ran in STANDARD or DEEP mode, the Stress Tester has already attacked the top ideas. Before evaluating, check:
+
+- **`confidence_adjusted`** in `ideas.csv` — did this idea survive adversarial pressure?
+- **`stress_results`** — what happened in each round? Survived cleanly, survived modified, or fatally wounded?
+
+An idea that is both brilliant (5+ of 7 questions) AND battle-tested (`confidence_adjusted >= 7`) is the session's strongest output. Call this out explicitly in your output.
+
+Ideas with a fatal wound from stress testing (`confidence_adjusted <= 3`) can still be evaluated for brilliance — a structurally brilliant idea with a fatal flaw is worth flagging, not silently dropping. Note the flaw and let the user decide.
+
 ## Process
 
 1. Read the Idea Menu from `$WORKSPACE/08-synthesize.md`
 2. Read the Tension analysis from `$WORKSPACE/07-tension.md` (if exists)
 3. Read the Digger's root causes from `$WORKSPACE/01-discover.md`
-4. Evaluate the top 8-10 ideas (across all three Menu buckets) against the 7 questions
-5. Separate into Brilliant and Notable tiers
-6. Write pitch sentences for Brilliant ideas
-7. Classify durability
-8. Append output to `$WORKSPACE/08-synthesize.md`
+4. Check `ideas.csv` for `confidence_adjusted` and `stress_results` (if stress testing ran)
+5. Evaluate the top 8-10 ideas (across all three Menu buckets) against the 7 questions
+6. Separate into Brilliant and Notable tiers
+7. Write pitch sentences for Brilliant ideas
+8. Classify durability
+9. For Brilliant ideas with stress test data: note whether they are battle-tested (`confidence_adjusted >= 7`) or carry surviving objections
+10. Append output to `$WORKSPACE/08-synthesize.md`
 
 ## Output Format
 
@@ -82,6 +95,7 @@ For each candidate evaluated:
 **Pitch:** [One sentence — the structural insight]
 **Durability:** [Evergreen / Window / Catalytic] — [one sentence why]
 **Why it's brilliant:** [2-3 sentences expanding on the pitch]
+**Battle-tested:** [Yes — confidence_adjusted: X.X / Not stress-tested (LITE mode) / Wounded — confidence_adjusted: X.X, see stress objection]
 
 ---
 
