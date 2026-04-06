@@ -29,7 +29,7 @@ Choose before starting. Ask the user if unclear.
 - Skip ORCHESTRATE, DISTRIBUTE, BUILD, TENSION
 - Skip COLLISION MAP and RATCHET
 - Run only Innovator + Wild Card in SEED phase
-- Synthesizer outputs Idea Menu only (no experiments)
+- Synthesizer outputs Idea Menu only (no proof searches)
 
 **DEEP mode adds:**
 - Historian runs after DISCOVER (cross-session transfer)
@@ -167,7 +167,7 @@ The Synthesizer's final output uses three buckets:
 > High Impact (≥8) + reasonable Confidence (≥5). The main strategic bets.
 
 ### Moonshots
-> Very High Impact (≥9) + High Novelty (≥8) but lower Confidence (≤5). Worth exploring with experiments.
+> Very High Impact (≥9) + High Novelty (≥8) but lower Confidence (≤5). Worth validating with proof searches.
 
 ---
 
@@ -276,7 +276,7 @@ Any John can optionally have a **second constraint axis** — chosen by the Orch
 | **Dialectical Ratchet** | Runs thesis→antithesis→synthesis cycles on hot zones with constraint locking |
 | **Brainwriter** | Builds on top 10 Johns ideas + Ratchet pre-resolved syntheses; tracks hot/warm/cold seeds |
 | **Tension Analyzer** | Maps warm-zone contradictions; Bridge ops; PMI. Hot zones already resolved by Ratchet — focus on warm zones |
-| **Synthesizer** | Hybrids, Anchored ICE scores, Idea Menu, Seed Bank |
+| **Synthesizer** | Hybrids, Anchored ICE scores, Idea Menu, Proof Search Queries, Seed Bank |
 | **Stress Tester** | Adversarial red team: 2-3 attack rounds per idea; adjusts confidence scores; flags fatal flaws and surviving objections (STANDARD + DEEP only) |
 | **Brilliance Filter** | Evaluates top ideas against 7 brilliance questions; separates Brilliant (0-3) from Notable (2-4); writes pitch sentences; classifies durability |
 
@@ -378,7 +378,7 @@ Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't ca
 
 ### Phase 11: CONVERGE
 
-See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2. Now informed by both the Stress Test confidence scores and the Brilliance Filter's output.
+See `phases/09-converge.md`. Decision tree, proof search review, decide, optional Round 2. Now informed by both the Stress Test confidence scores and the Brilliance Filter's output.
 
 ---
 
@@ -395,6 +395,7 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 9. **Disagreement zones are the most valuable territory**: The Collision Map makes the skill spend its energy where agents disagreed most. Cold zones (consensus) are low novelty — hot zones (opposing mechanisms) are where the best ideas hide. The Ratchet turns the deepest disagreements into the strongest syntheses through dialectical pressure rather than assumption.
 10. **Stress-tested confidence is earned, not guessed**: Each `confidence_adjusted` score has a full trail — what was attacked, how the idea responded, what survived. An idea that held up under adversarial pressure is qualitatively different from one that was never tested. The strongest outputs are ideas that are both brilliant and battle-tested.
 11. **Variable Johns with cold seed injection means rejected ideas get a second chance**: The GHOST zone specifically transforms what everyone else dismissed — because the surprise is often in what nobody championed. Injecting cold seeds unlabeled into regular Johns' batches gives those ideas a second pass through every temperature zone without prejudice.
+12. **Proof search queries replace aspirational experiments.** Nobody runs 48-hour experiments. Everyone can run a web search in 10 minutes. The Synthesizer generates specific queries that find real-world evidence — existing competitors, pricing data, demand signals, and failure postmortems. If WebSearch is available, the skill runs the searches itself and includes real data in the output.
 
 ---
 
@@ -414,3 +415,4 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 - **Don't use generic ICE anchors** — calibrate to the session's specific root causes
 - **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
 - **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.
+- **Don't generate 48-hour experiments** — they sound actionable but nobody does them. Generate proof search queries instead. A 10-minute web search produces more validation than a hypothetical experiment design.

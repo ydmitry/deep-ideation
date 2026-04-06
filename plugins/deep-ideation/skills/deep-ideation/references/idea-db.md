@@ -176,7 +176,7 @@ python scripts/idea_db.py compute <workspace> \
 | **HAT EVAL** | Add hat evaluation columns per idea (white_note, red_note, black_note, etc.) |
 | **TENSION** | Resolution ideas: phase=tension, triz_status for top ideas |
 | **SYNTHESIZE** | Hybrids: phase=synthesis, full chains. ICE calibration. Add evaluation criteria. Score all. Add validation. |
-| **CONVERGE** | Add experiment columns (48hr_version, success_signal, kill_criterion) |
+| **CONVERGE** | Add proof search columns (proof_queries, proof_findings, proof_verdict) |
 | **STRESS-TEST** | Add stress columns (confidence_raw, confidence_adjusted, stress_rounds, stress_attacks, stress_results, stress_strongest_objection, stress_modifications). `confidence_adjusted` is the authoritative battle-test confidence for each idea. |
 
 ## Session Artifacts

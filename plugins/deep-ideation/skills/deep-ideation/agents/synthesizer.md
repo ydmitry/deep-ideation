@@ -130,13 +130,29 @@ python scripts/idea_db.py add_column <workspace> validation --default "unvalidat
 python scripts/idea_db.py add_column <workspace> evidence_summary --default ""
 ```
 
-### Step 9: Experiment Design (for top 2-3 ideas)
+### Step 9: Proof Search Queries (for top 2-3 ideas)
 
-For each surviving idea, design the smallest 48-hour experiment:
-1. **48-hour version**: cheapest, fastest version to try in 2 days
-2. **Success signal**: one specific, observable outcome (not "users are happier" but "3 out of 5 people say X")
-3. **Kill criterion**: the riskiest assumption — what, if wrong, makes this worthless. Test THIS first.
-4. **Next step if it works**: the 2-week move after success
+For each surviving idea, generate 3-5 specific web search queries that find real-world evidence:
+
+1. **Existing competitors** — "is someone already doing this? What do they charge? How many customers?"
+   Query pattern: `"[idea keyword] [location/market] pricing reviews"`
+2. **Demand signals** — "are people searching for this? What do they say they want?"
+   Query pattern: `"[problem the idea solves] [target audience] forum/reddit"`
+3. **Pricing validation** — "what do similar products/services cost?"
+   Query pattern: `"[similar product category] pricing 2025 2026"`
+4. **Failure evidence** — "has someone tried this and failed? Why?"
+   Query pattern: `"[idea keyword] failed shutdown postmortem"`
+5. **Market size** — "how big is this opportunity?"
+   Query pattern: `"[market category] market size growth 2025 2026"`
+
+**Interpret results:**
+- If competitors exist with reviews → market is validated. Compete on differentiation.
+- If competitors exist but no reviews → market exists but product-market fit is unproven.
+- If no competitors → either blue ocean (rare) or no demand (common). Search for demand signals.
+- If failure postmortems exist → read them. The reason others failed is your most valuable data.
+- If pricing is consistent across competitors → that's the market price. Don't fight it.
+
+**If WebSearch tool is available:** Actually run the searches during the session and include findings in the output. Real data beats hypothetical experiments.
 
 ### Step 10: Session Seed Bank Export
 
@@ -218,7 +234,7 @@ Based on evidence and Idea Menu:
 ### Moonshots (worth exploring)
 > Very High Impact (≥9) + High Novelty (≥8)
 
-| # | Idea | Why Moon | ICE Score | Required Experiment |
+| # | Idea | Why Moon | ICE Score | Key Proof Search |
 |---|------|----------|-----------|-------------------|
 
 ---
@@ -234,13 +250,17 @@ Based on evidence and Idea Menu:
 
 ---
 
-## Experiments: Test Before You Commit
+## Proof Search: Validate Before You Build
 
-### Experiment for [Top Idea #1]:
-**48-hour version:** [stripped-down test]
-**Success signal:** [specific observable outcome]
-**Kill criterion:** [riskiest assumption — test this first]
-**If it works:** [next 2-week move]
+### [Top Idea #1]
+| Proof Search Query | What You're Looking For | What It Means If Found | What It Means If Not Found |
+|---|---|---|---|
+| "[idea keyword] [market] pricing reviews" | Existing competitors, pricing, reviews | Market validated — differentiate | Blue ocean or no demand |
+| "[problem] [audience] forum/reddit" | Demand signals, pain points | People want this — build it | No expressed demand yet |
+| "[similar category] pricing 2025 2026" | Market pricing range | Price anchor established | Novel category — test pricing |
+| "[idea keyword] failed shutdown postmortem" | Why similar ideas failed | Learn what to avoid | No public failures (good or unknown) |
+
+**If WebSearch was run:** [actual findings summary with links]
 
 ---
 
@@ -259,8 +279,8 @@ Based on evidence and Idea Menu:
 - **Calibrate ICE anchors FIRST** — generic 1-10 scores are meaningless; anchored scores tell you something
 - Every hybrid must list its full operation chain with temperature zone provenance
 - The Idea Menu is your most action-oriented output — make it easy to act on
-- Experiments must be doable in 48 hours — if expensive, simplify further
-- Kill criteria are the most important part of experiment design — test the riskiest assumption first
+- Proof search queries must be specific and runnable — no vague searches like "is this a good idea?" If WebSearch is available, run them during the session.
+- Failure evidence is the most valuable search — why similar ideas failed tells you what to avoid, not just whether to try
 - Convergent signals spanning temperature zones are your highest-confidence recommendations
 - Always export the Seed Bank — future sessions depend on it
 

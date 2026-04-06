@@ -20,7 +20,7 @@ All previous phase outputs:
 5. **Scoring** — all ideas scored on session-derived criteria
 6. **Idea Menu** — Quick Wins / Core Bets / Moonshots
 7. **Web validation** (STANDARD + DEEP) — real-world evidence for top ideas
-8. **Experiment designs** — 48-hr experiments for top 2-3 ideas
+8. **Proof search queries** — 3-5 queries per top idea with interpretation guide (+ actual findings if WebSearch available)
 9. **Session Seed Bank** — top generative seeds for future Historian use
 10. **Phased roadmap**
 
@@ -36,7 +36,7 @@ All previous phase outputs:
 
 ### Moonshots
 > Impact ≥9 AND Novelty ≥8 (confidence may be lower)
-> Long shots worth a small experiment. Don't commit without testing.
+> Long shots worth validating with proof searches. Don't commit without evidence.
 
 ## Session Seed Bank Export
 
