@@ -13,7 +13,7 @@ Each John gets:
 - Their specific seed batch (from Phase 4 — cold seeds injected unlabeled)
 - Their starting mode: `[STARTING_MODE]`
 - Their temperature zone: `[ICE/FIRE/PLASMA/GHOST/CHAOS/MIRROR]`
-- Their budget constraint (if assigned): `[$0/$5K/$50K+]`
+- Their second constraint (if assigned): `[axis: value]` — e.g., "budget: $0", "time: this week"
 - Operations toolkit: `references/operations.md`
 - ICE anchors: `$WORKSPACE/ice-anchors.md`
 - The TRIZ trade-off question (from Innovator)
@@ -76,7 +76,7 @@ Output scales with John count. Per John: 10-15 ideas.
 
 Each John saves to:
 - `$WORKSPACE/05-john-[a/b/c/d/e].md` — full output with chains
-- Idea DB: `phase=transform, temperature_zone=[zone], budget_constraint=[budget]`
+- Idea DB: `phase=transform, temperature_zone=[zone], second_constraint=[axis:value or none]`
 
 ## TRIZ Trade-Off Engagement
 

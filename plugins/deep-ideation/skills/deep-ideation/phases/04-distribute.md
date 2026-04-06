@@ -84,12 +84,20 @@ Before distributing, decide how many Johns to launch and which temperature zones
 
 **Multiple Johns of same type:** Allowed. If hot seeds are plentiful, launch 2 FIRE Johns each receiving half the hot seed batch — they'll diverge because seeds differ.
 
-### Budget Constraints (optional second axis)
+### Second Constraint Axis (optional, situational)
 
-The Orchestrator may assign budget constraints. If so, pair them with temperature zones:
-- Record as `[ZONE] + [$BUDGET]` in the distribution plan
-- Example: "John A: FIRE + $0", "John B: PLASMA + $5K"
-- If no budget constraint assigned, omit from packets
+The Orchestrator chooses whether a second constraint axis is useful for THIS problem — and what that axis is. It's not always budget. Pick the dimension most likely to produce useful divergence:
+
+- **Budget:** $0 / $5K / $50K+
+- **Time horizon:** ship this week / this quarter / 2-year
+- **Team size:** solo / small team / org-scale
+- **User segment:** power users / mainstream / non-technical
+- **Regulatory environment:** regulated / unregulated / international
+- Or any other axis relevant to the problem
+
+If a second constraint is used, assign different values to different Johns and record as `[ZONE] + [axis: value]` in the distribution plan. Example: "John A: FIRE + [budget: $0]", "John B: PLASMA + [time: this quarter]".
+
+If no second constraint is relevant, omit entirely.
 
 ---
 
@@ -139,8 +147,8 @@ python scripts/idea_db.py add_column <workspace> assigned_to
 # Set values: JohnA, JohnB, JohnC, JohnD, JohnE, JohnAB, JohnBC, JohnAC, JohnABC, etc.
 python scripts/idea_db.py add_column <workspace> john_zone
 # Set zone: FIRE, PLASMA, ICE, GHOST, CHAOS, MIRROR
-python scripts/idea_db.py add_column <workspace> john_budget
-# Set budget: $0, $5K, $50K+, none
+python scripts/idea_db.py add_column <workspace> john_constraint
+# Set constraint: "budget:$0", "time:this-week", "segment:power-users", "none", etc.
 ```
 
 ---
@@ -155,7 +163,7 @@ Every John receives:
 5. IFR statement
 6. Operations toolkit reference (`references/operations.md`)
 7. Their temperature zone constraints
-8. Their budget constraint (if assigned)
+8. Their second constraint (if assigned — axis name + value)
 9. ICE anchor calibration (`$WORKSPACE/ice-anchors.md`)
 
 Save distribution plan to `$WORKSPACE/04-distribute.md`. Include: John count, zones assigned, budget constraints if any, seed counts per John.

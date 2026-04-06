@@ -267,7 +267,7 @@ Number of Johns scales with complexity mode and seed count. See Phase 4 (DISTRIB
 
 Multiple Johns of the same type are allowed with different seed batches (e.g., 2 FIRE Johns each receiving half the hot seeds).
 
-Any John can optionally have a **budget constraint** as a second axis: $0 (free tools only), $5K (small investment), or $50K+ (real resources).
+Any John can optionally have a **second constraint axis** — chosen by the Orchestrator based on what dimension of diversity matters for this problem. Examples: budget ($0/$5K/$50K+), time horizon (this week/this quarter/2-year), team size, user segment, regulatory environment. Budget is just one option.
 
 ### Collision + Synthesis Phase (sequential)
 | Agent | Role |

@@ -22,17 +22,20 @@ Each John operates in a different temperature zone. This is NOT a suggestion —
 
 The temperature zones ensure that even if all Johns work on similar seeds, they produce genuinely different outputs because they're operating under different rules.
 
-## Budget Constraint Axis (second constraint — assigned by Orchestrator)
+## Second Constraint Axis (situational — assigned by Orchestrator)
 
-A John can have BOTH a temperature zone AND a budget constraint. This produces a second axis of diversity. If assigned, the budget constraint is equally hard:
+A John can have BOTH a temperature zone AND a second constraint. The second constraint is chosen by the Orchestrator based on what dimension of diversity matters most for THIS problem. It is equally hard — not a suggestion.
 
-- **$0 (solo, free tools only):** Every idea must be achievable by one person using only free tools today. No paid services, no team, no infrastructure. If an idea requires money, transform it until it doesn't.
-- **$5K (small investment):** Ideas can involve a small budget — a contractor, a paid tool, a short experiment. Prioritize leverage and low overhead.
-- **$50K+ (real resources):** No artificial constraints. Explore ideas that require real infrastructure, team, or sustained investment.
+Common examples:
+- **Budget:** $0 (free tools only) / $5K (small investment) / $50K+ (real resources)
+- **Time horizon:** ship this week / ship this quarter / 2-year horizon
+- **Team size:** solo / small team (2-5) / org-scale
+- **User segment:** power users / mainstream / non-technical
+- **Regulatory environment:** regulated industry / unregulated / international
 
-Example assignment: "FIRE + $0" = wild ideas that cost nothing. "ICE + $50K+" = conservative ideas backed by real resources.
+The Orchestrator names the axis and its values when assigning Johns. Example: "FIRE + [ship this week]" = wild ideas that ship fast. "ICE + [regulated industry]" = conservative ideas that survive compliance.
 
-If no budget constraint is assigned, ignore this axis entirely.
+If no second constraint is assigned, ignore this axis entirely.
 
 ## Disney Spiral on Seeds
 
@@ -83,7 +86,7 @@ Document every operation. Every idea must trace back to its original seed.
 ```markdown
 # John [A/B/C] — Transformed Ideas
 
-## Starting Mode: [mode] | Temperature Zone: [ICE/FIRE/PLASMA/GHOST/CHAOS/MIRROR] | Budget: [$0/$5K/$50K+/none]
+## Starting Mode: [mode] | Temperature Zone: [ICE/FIRE/PLASMA/GHOST/CHAOS/MIRROR] | Constraint: [axis: value, or none]
 ## Seeds Received: [count] from [which specialists]
 
 ### Mode 1: [Starting Mode]
@@ -120,7 +123,7 @@ Some seeds in your batch may be "cold" — ideas that were triaged as low-novelt
 ## Rules
 - **EVERY idea must trace back to an original specialist seed.** No generating from scratch.
 - **Respect your temperature zone** — this is a hard constraint, not a style
-- **Respect your budget constraint** — if assigned, it is equally hard
+- **Respect your second constraint** — if assigned, it is equally hard as the temperature zone
 - Document the FULL operation chain for every idea
 - Each mode should genuinely change the ideas, not just relabel
 - Your top 5 should span different modes and different source specialists
