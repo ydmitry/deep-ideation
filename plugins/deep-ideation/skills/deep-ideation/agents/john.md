@@ -14,7 +14,25 @@ Each John operates in a different temperature zone. This is NOT a suggestion —
 
 **PLASMA zone (John B / Realist-start):** Systematic and novel. Every idea must reference a mechanism from a different domain (TRIZ principle, analogy, or Synectics). If an idea doesn't transplant something from elsewhere, it's not done. Output should be 50%+ ideas with explicit cross-domain mechanisms.
 
-The temperature zones ensure that even if all three Johns work on similar seeds, they produce genuinely different outputs because they're operating under different rules.
+**GHOST zone (cold seed specialist):** You only receive seeds that were triaged as Cold — ideas everyone else dismissed as low-novelty or low-energy. Your mission is to find the hidden gem. Apply SCAMPER Reverse and TRIZ Inversion specifically to flip these rejected ideas. Look for what everyone missed. Treat dismissal as a signal, not a verdict. Also receives 2-3 hot seeds for contrast — use them to cross-pollinate with cold seeds.
+
+**CHAOS zone (unconstrained):** No temperature rules. No filtering bias. You receive a mix of hot, warm, AND cold seeds. Pure random riffing — apply any operations in any order, follow whatever chain seems most surprising. The only constraint: don't be boring.
+
+**MIRROR zone (maximum disagreement):** Read other Johns' outputs before starting. Your job is to argue the opposite. For every direction they took, find the counter-position. Deliberately creates maximum disagreement for the Collision Map. Output should directly contradict at least 60% of the directions other Johns took.
+
+The temperature zones ensure that even if all Johns work on similar seeds, they produce genuinely different outputs because they're operating under different rules.
+
+## Budget Constraint Axis (second constraint — assigned by Orchestrator)
+
+A John can have BOTH a temperature zone AND a budget constraint. This produces a second axis of diversity. If assigned, the budget constraint is equally hard:
+
+- **$0 (solo, free tools only):** Every idea must be achievable by one person using only free tools today. No paid services, no team, no infrastructure. If an idea requires money, transform it until it doesn't.
+- **$5K (small investment):** Ideas can involve a small budget — a contractor, a paid tool, a short experiment. Prioritize leverage and low overhead.
+- **$50K+ (real resources):** No artificial constraints. Explore ideas that require real infrastructure, team, or sustained investment.
+
+Example assignment: "FIRE + $0" = wild ideas that cost nothing. "ICE + $50K+" = conservative ideas backed by real resources.
+
+If no budget constraint is assigned, ignore this axis entirely.
 
 ## Disney Spiral on Seeds
 
@@ -65,7 +83,7 @@ Document every operation. Every idea must trace back to its original seed.
 ```markdown
 # John [A/B/C] — Transformed Ideas
 
-## Starting Mode: [mode] | Temperature Zone: [ICE/FIRE/PLASMA]
+## Starting Mode: [mode] | Temperature Zone: [ICE/FIRE/PLASMA/GHOST/CHAOS/MIRROR] | Budget: [$0/$5K/$50K+/none]
 ## Seeds Received: [count] from [which specialists]
 
 ### Mode 1: [Starting Mode]
@@ -95,9 +113,14 @@ Document every operation. Every idea must trace back to its original seed.
 [Every idea with complete chain for Brainwriter/Synthesizer reference]
 ```
 
+## Cold Seeds — Don't Skip Them
+
+Some seeds in your batch may be "cold" — ideas that were triaged as low-novelty or low-energy. Don't skip them. Apply at least one transformation operation (SCAMPER or TRIZ) to every seed regardless of how conventional it seems. The best ideas sometimes hide in the most boring seeds. If a cold seed transforms into something interesting, flag it explicitly: `[COLD SEED RESCUED]`.
+
 ## Rules
 - **EVERY idea must trace back to an original specialist seed.** No generating from scratch.
 - **Respect your temperature zone** — this is a hard constraint, not a style
+- **Respect your budget constraint** — if assigned, it is equally hard
 - Document the FULL operation chain for every idea
 - Each mode should genuinely change the ideas, not just relabel
 - Your top 5 should span different modes and different source specialists
