@@ -1,6 +1,6 @@
 # Phase 9: CONVERGE
 
-Three-part convergence: Filter → Experiment → Decide. Optionally: Round 2.
+Three-part convergence: Filter → Validate → Decide. Optionally: Round 2.
 
 ## Part 1: Decision Tree
 
@@ -26,30 +26,30 @@ AskUserQuestion:
 
 After responses, apply the filter and present the 2-3 best-fit ideas from the Idea Menu.
 
-## Part 2: Confirm Experiments
+## Part 2: Review Proof Search Findings
 
-Present the experiment designs from Phase 8 for the top 2-3 ideas:
+Present the proof search results (or queries to run) from Phase 8 for the top 2-3 ideas:
 
 For each surviving idea:
-- **48-hour version**: the stripped-down test
-- **Success signal**: specific observable outcome
-- **Kill criterion**: riskiest assumption to test first
-- **If it works**: next 2-week move
+- **Market evidence**: what competitors exist, what they charge, how many reviews
+- **Demand signals**: what people are searching for, what they say they want
+- **Failure evidence**: why similar ideas failed (if found — this is the most valuable data)
+- **Verdict**: Market validated / Unvalidated / Counter-evidence found
 
 ```
 AskUserQuestion:
-  question: "Here are your top ideas with experiment designs:
+  question: "Here are your top ideas with proof search findings:
 
-    1. [Idea #1]: 48-hr test = [description]. Success = [signal]. Kill = [criterion].
-    2. [Idea #2]: 48-hr test = [description]. Success = [signal]. Kill = [criterion].
-    3. [Idea #3]: 48-hr test = [description]. Success = [signal]. Kill = [criterion].
+    1. [Idea #1]: [verdict]. [key finding — e.g., '5 competitors found charging €40-80, 200+ reviews']
+    2. [Idea #2]: [verdict]. [key finding — e.g., 'no competitors but strong demand signals on Reddit']
+    3. [Idea #3]: [verdict]. [key finding — e.g., 'similar product failed in 2023 — reason: distribution']
 
     What would you like to do?"
   header: "Decision"
   options:
-    - "Run experiment for #1 this week"
-    - "Run #1 and #2 in parallel (different assumptions)"
-    - "Combine a few ideas first, then experiment"
+    - "Act on #1 — the evidence is strong"
+    - "Research #2 deeper — promising but unvalidated"
+    - "Combine a few ideas first, then validate"
     - "I need to think — save everything"
     - "Start a Round 2 — I want to explore [direction] deeper"
 ```
