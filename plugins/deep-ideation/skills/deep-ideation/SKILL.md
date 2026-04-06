@@ -21,9 +21,9 @@ Choose before starting. Ask the user if unclear.
 
 | Mode | When to Use | Phases Run | Agents | Johns | Expected Time |
 |------|------------|-----------|--------|-------|--------------|
-| **LITE** | Quick problem, 30-min session, low stakes | 1 → 3 → 8 → 10 | Digger + 2 specialists + Synthesizer + Brilliance | 2 (FIRE, ICE) | Fast |
-| **STANDARD** | Default. Most problems. | 1 → 10 (all phases) | Full roster | 3-4 (FIRE, PLASMA, ICE + GHOST if >10 cold seeds) | Normal |
-| **DEEP** | High-stakes, complex, multi-stakeholder | 1 → 10 + Historian + 2nd iterative round | Full roster + Historian + Round 2 | 4-5 (FIRE, PLASMA, ICE, GHOST, MIRROR) | Thorough |
+| **LITE** | Quick problem, 30-min session, low stakes | 1 → 3 → 8 → 9 → 10 | Digger + 2 specialists + Synthesizer + Brilliance | 2 (FIRE, ICE) | Fast |
+| **STANDARD** | Default. Most problems. | 1 → 10 (all phases, including 9.5) | Full roster + Stress Tester | 3-4 (FIRE, PLASMA, ICE + GHOST if >10 cold seeds) | Normal |
+| **DEEP** | High-stakes, complex, multi-stakeholder | 1 → 10 + Historian + 2nd iterative round | Full roster + Historian + Stress Tester + Round 2 | 4-5 (FIRE, PLASMA, ICE, GHOST, MIRROR) | Thorough |
 
 **LITE mode shortcuts:**
 - Skip ORCHESTRATE, DISTRIBUTE, BUILD, TENSION
@@ -277,6 +277,7 @@ Any John can optionally have a **second constraint axis** — chosen by the Orch
 | **Brainwriter** | Builds on top 10 Johns ideas + Ratchet pre-resolved syntheses; tracks hot/warm/cold seeds |
 | **Tension Analyzer** | Maps warm-zone contradictions; Bridge ops; PMI. Hot zones already resolved by Ratchet — focus on warm zones |
 | **Synthesizer** | Hybrids, Anchored ICE scores, Idea Menu, Seed Bank |
+| **Stress Tester** | Adversarial red team: 2-3 attack rounds per idea; adjusts confidence scores; flags fatal flaws and surviving objections (STANDARD + DEEP only) |
 | **Brilliance Filter** | Evaluates top ideas against 7 brilliance questions; separates Brilliant (0-3) from Notable (2-4); writes pitch sentences; classifies durability |
 
 ### Support Agents
@@ -289,15 +290,16 @@ Any John can optionally have a **second constraint axis** — chosen by the Orch
 ## The Flow
 
 ```
-DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → COLLISION MAP → RATCHET → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → BRILLIANCE → CONVERGE
-    ↓           ↓          ↓        ↓         ↓            ↓              ↓             ↓         ↓           ↓              ↓          ↓            ↓           ↓
-  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns       Classify      Thesis→   Brain-    Six Hats on    Warm      Anchored    Brilliant    Idea Menu
-  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral       Hot/Warm/    Antithesis  writer     Top 10 built  zones      ICE + Menu    Ideas     + Seed Bank
+DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → COLLISION MAP → RATCHET → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → [9.5 STRESS-TEST] → BRILLIANCE → CONVERGE
+    ↓           ↓          ↓        ↓         ↓            ↓              ↓             ↓         ↓           ↓              ↓          ↓               ↓                  ↓           ↓
+  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns       Classify      Thesis→   Brain-    Six Hats on    Warm      Anchored        Confidence         Brilliant    Idea Menu
+  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral       Hot/Warm/    Antithesis  writer     Top 10 built  zones      ICE + Menu       Adjusted             Ideas    + Seed Bank
                                                                         Cold         →Synth    [+Ratchet]                only
 ```
 
 *(Phase 5.5 Collision Map and Phase 5.7 Ratchet: STANDARD and DEEP only)*
 *(Phase 6.5 Hat Eval only in STANDARD and DEEP modes)*
+*(Phase 9.5 Stress-Test only in STANDARD and DEEP modes)*
 
 ---
 
@@ -362,15 +364,21 @@ See `phases/07-tension.md`. Contradiction mapping, Bridge ops, PMI. **Hot zones 
 
 See `phases/08-synthesize.md`. Hybrids, Anchored ICE, Idea Menu, web validation, Seed Bank.
 
-### Phase 9: BRILLIANCE FILTER
+### Phase 9.5: STRESS-TEST (STANDARD + DEEP only)
+
+See `phases/09.5-stress-test.md` and `agents/stress-tester.md`. Skipped in LITE mode.
+
+Runs adversarial attacks on the top ideas from the Idea Menu. In STANDARD: 2 rounds × top 5 ideas. In DEEP: 3 rounds × top 8 ideas. Each round targets a different fatal flaw category (market size, hidden assumption, dependency, timing, distribution, etc.). Adjusts each idea's confidence score and records the strongest surviving objection. Output saved to `$WORKSPACE/09.5-stress-test.md` and stress columns written to `ideas.csv`.
+
+### Phase 10: BRILLIANCE FILTER
 
 See `phases/10-brilliance.md` and `agents/brilliance.md`. Runs in ALL modes (LITE, STANDARD, DEEP) — it's cheap, just a judgment pass on finished work.
 
-Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. Output appended to `$WORKSPACE/08-synthesize.md` — the Brilliant Ideas section informs the convergence decision.
+Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. In STANDARD and DEEP, also cross-references `confidence_adjusted` from the Stress Tester — battle-tested brilliant ideas are the session's strongest output. Output appended to `$WORKSPACE/08-synthesize.md` as the final section the user reads.
 
-### Phase 10: CONVERGE
+### Phase 11: CONVERGE
 
-See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2. Now informed by the Brilliance Filter's output.
+See `phases/09-converge.md`. Decision tree, experiment design, decide, optional Round 2. Now informed by both the Stress Test confidence scores and the Brilliance Filter's output.
 
 ---
 
@@ -385,7 +393,8 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 7. **Cross-session transfer**: Historian + Seed Bank means each session builds on all previous work.
 8. **Brilliance Filter catches what scoring misses**: ICE rewards feasible impact. Brilliance rewards structural insight — parsimony, surprise, inevitability. An idea that scores 6.0 on ICE but resolves the session's core contradiction in a single mechanism is more valuable than a 9.0 that's a well-executed known pattern.
 9. **Disagreement zones are the most valuable territory**: The Collision Map makes the skill spend its energy where agents disagreed most. Cold zones (consensus) are low novelty — hot zones (opposing mechanisms) are where the best ideas hide. The Ratchet turns the deepest disagreements into the strongest syntheses through dialectical pressure rather than assumption.
-10. **Variable Johns with cold seed injection means rejected ideas get a second chance**: The GHOST zone specifically transforms what everyone else dismissed — because the surprise is often in what nobody championed. Injecting cold seeds unlabeled into regular Johns' batches gives those ideas a second pass through every temperature zone without prejudice.
+10. **Stress-tested confidence is earned, not guessed**: Each `confidence_adjusted` score has a full trail — what was attacked, how the idea responded, what survived. An idea that held up under adversarial pressure is qualitatively different from one that was never tested. The strongest outputs are ideas that are both brilliant and battle-tested.
+11. **Variable Johns with cold seed injection means rejected ideas get a second chance**: The GHOST zone specifically transforms what everyone else dismissed — because the surprise is often in what nobody championed. Injecting cold seeds unlabeled into regular Johns' batches gives those ideas a second pass through every temperature zone without prejudice.
 
 ---
 
@@ -400,6 +409,8 @@ See `phases/09-converge.md`. Decision tree, experiment design, decide, optional 
 - **Don't always use exactly 3 Johns** — scale up for complex problems (DEEP mode or 50+ seeds), scale down for simple ones (LITE mode); the right number is the one that matches the problem's complexity
 - **Don't run the Ratchet on warm zones** — they don't have enough tension to produce interesting syntheses; route them to Tension Analyzer instead
 - **Don't skip Tension Analysis** — the Groan Zone is where the most surprising ideas emerge (warm zones still need bridging)
+- **Don't trust unearned confidence scores** — if an idea wasn't stress-tested, its confidence is a guess. In STANDARD and DEEP modes, `confidence_adjusted` is the number to use, not the raw ICE confidence.
+- **Don't use strawman attacks in Stress Test** — the point is genuine pressure. An attack the idea can trivially deflect tells you nothing.
 - **Don't use generic ICE anchors** — calibrate to the session's specific root causes
 - **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
 - **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.

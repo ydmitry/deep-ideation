@@ -84,6 +84,15 @@ python scripts/idea_db.py add_column <workspace> evidence_summary --default ""
 # Add TRIZ trade-off resolution column
 python scripts/idea_db.py add_column <workspace> triz_status --default ""
 # Values: resolves / picks_side / sidesteps
+
+# Add Stress Test columns (Phase 9.5 — STANDARD + DEEP modes)
+python scripts/idea_db.py add_column <workspace> confidence_raw --default "5.0"
+python scripts/idea_db.py add_column <workspace> confidence_adjusted
+python scripts/idea_db.py add_column <workspace> stress_rounds
+python scripts/idea_db.py add_column <workspace> stress_attacks
+python scripts/idea_db.py add_column <workspace> stress_results
+python scripts/idea_db.py add_column <workspace> stress_strongest_objection
+python scripts/idea_db.py add_column <workspace> stress_modifications
 ```
 
 ### Setting Values
@@ -168,6 +177,7 @@ python scripts/idea_db.py compute <workspace> \
 | **TENSION** | Resolution ideas: phase=tension, triz_status for top ideas |
 | **SYNTHESIZE** | Hybrids: phase=synthesis, full chains. ICE calibration. Add evaluation criteria. Score all. Add validation. |
 | **CONVERGE** | Add experiment columns (48hr_version, success_signal, kill_criterion) |
+| **STRESS-TEST** | Add stress columns (confidence_raw, confidence_adjusted, stress_rounds, stress_attacks, stress_results, stress_strongest_objection, stress_modifications). `confidence_adjusted` is the authoritative battle-test confidence for each idea. |
 
 ## Session Artifacts
 
@@ -183,3 +193,17 @@ The user can:
 - Sort by any score column
 - Track which seeds produced the best final ideas (via source_seed + chain)
 - Share `seed-bank.md` with the Historian for the next session
+- Sort by `confidence_adjusted` to see which ideas survived stress testing (STANDARD/DEEP only)
+- Read `stress_strongest_objection` to understand residual risks on top ideas
+
+### Stress Test Column Reference
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `confidence_raw` | float | Always 5.0 — neutral starting point before any stress testing |
+| `confidence_adjusted` | float | 5.0 ± round scores. Range 1.0–9.0. Scores ≥7 = battle-tested. |
+| `stress_rounds` | int | Number of attack rounds completed (2 in STANDARD, 3 in DEEP) |
+| `stress_attacks` | string | Semicolon-separated list of attack types used (e.g., "Market Size;Hidden Assumption") |
+| `stress_results` | string | Semicolon-separated list of outcomes per round (survived_cleanly / survived_modified / fatal_wound / no_good_objection) |
+| `stress_strongest_objection` | string | The best attack that didn't kill the idea — a residual risk to monitor |
+| `stress_modifications` | string | Changes the idea needed to survive attacks, or "None" |
