@@ -1,6 +1,6 @@
 # deep-ideation
 
-A Claude skill that runs multiple AI agents in parallel to brainstorm ideas at depth. Agents generate, transform, stress-test, and score ideas — producing a prioritized menu of Quick Wins, Core Bets, and Moonshots.
+A Claude skill that runs multiple AI agents in parallel to brainstorm ideas at depth. Agents generate, transform, stress-test, and score ideas — producing a prioritized shortlist of the most promising ideas.
 
 ## Complexity Modes
 
