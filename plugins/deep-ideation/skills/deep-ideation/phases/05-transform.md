@@ -23,6 +23,9 @@ Each John gets:
 Each John reads ONLY its assigned seeds — not the full CSV:
 
 ```bash
+# First, check the schema to see if assigned_to column exists
+python scripts/idea_db.py describe <workspace>
+
 # Check how many seeds total
 python scripts/idea_db.py size <workspace>
 
@@ -30,6 +33,13 @@ python scripts/idea_db.py size <workspace>
 python scripts/idea_db.py filter <workspace> assigned_to JohnA
 # Or for seeds assigned to multiple Johns:
 python scripts/idea_db.py filter <workspace> assigned_to JohnAB
+```
+
+**LITE mode fallback:** LITE skips Phase 4 (DISTRIBUTE), so the `assigned_to` column won't exist. If `describe` shows no `assigned_to` column, read ALL seeds instead:
+
+```bash
+# LITE mode: no assigned_to column — read all seeds
+python scripts/idea_db.py filter <workspace> phase seed
 ```
 
 Use the IDs from this output as your source seeds. Every transformed idea must trace back to one of these seed IDs via the `source_seed` field.

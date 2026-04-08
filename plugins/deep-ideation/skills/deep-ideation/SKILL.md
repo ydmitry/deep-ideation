@@ -85,6 +85,7 @@ Spawn 2-5 John Agents simultaneously:
 - Each reads: `phases/05-transform.md` + `agents/john.md` + `references/operations.md` + `$WORKSPACE/ice-anchors.md`
 - Input per John: **assigned_to value** (e.g. "JohnA"), temperature zone, starting mode, second constraint (if any), TRIZ trade-off
 - Each John filters its seeds with: `idea_db.py filter <ws> assigned_to JohnA`
+- **LITE fallback:** LITE skips DISTRIBUTE, so `assigned_to` doesn't exist — Johns read all seeds via `filter <ws> phase seed`
 - LITE: 2 Johns (FIRE, ICE). STANDARD: 3-4. DEEP: 4-5 (MIRROR runs after others).
 - Each produces: 10-15 transformed ideas → `$WORKSPACE/05-john-[a-e].md` + Idea DB (IDs returned)
 

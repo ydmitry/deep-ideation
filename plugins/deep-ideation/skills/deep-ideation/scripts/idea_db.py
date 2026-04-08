@@ -48,14 +48,21 @@ def get_lock_path(workspace):
     return os.path.join(workspace, LOCK_FILENAME)
 
 
+READ_ONLY_COMMANDS = frozenset({
+    "describe", "size", "slice", "filter", "filter_above",
+    "top", "stats", "show", "export_md", "unscored",
+})
+
+
 @contextmanager
-def locked_db(workspace):
-    """Acquire an exclusive file lock before reading/writing the CSV.
-    Parallel agents (e.g. multiple Johns) will block here until the lock is released."""
+def locked_db(workspace, *, shared=False):
+    """Acquire a file lock before reading/writing the CSV.
+    Read-only commands use a shared lock (LOCK_SH) so they don't block each other.
+    Write commands use an exclusive lock (LOCK_EX) so parallel agents don't corrupt the CSV."""
     lock_path = get_lock_path(workspace)
     lock_fd = open(lock_path, "w")
     try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        fcntl.flock(lock_fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
         yield
     finally:
         fcntl.flock(lock_fd, fcntl.LOCK_UN)
@@ -554,6 +561,12 @@ def cmd_slice(args):
         limit = args.limit or len(rows)
         sliced = rows[offset:offset + limit]
 
+    if not sliced and args.ids:
+        all_ids = [int(r.get("id", 0)) for r in rows]
+        max_id = max(all_ids) if all_ids else 0
+        print(f"WARNING: No ideas found in range {args.ids}. "
+              f"Available IDs: 1-{max_id} ({len(rows)} ideas after filters).", file=sys.stderr)
+
     ids = [r["id"] for r in sliced]
     print(f"SLICE: {len(sliced)} ideas")
     print(f"IDS: {','.join(ids)}")
@@ -737,12 +750,14 @@ def main():
         "describe": cmd_describe, "unscored": cmd_unscored,
     }
 
-    # All commands except init acquire an exclusive file lock so parallel
-    # agents (e.g. multiple Johns in Phase 5) don't corrupt the CSV.
+    # All commands except init acquire a file lock so parallel agents
+    # (e.g. multiple Johns in Phase 5) don't corrupt the CSV.
+    # Read-only commands use a shared lock; write commands use exclusive.
     if args.command == "init":
         commands[args.command](args)
     else:
-        with locked_db(args.workspace):
+        shared = args.command in READ_ONLY_COMMANDS
+        with locked_db(args.workspace, shared=shared):
             commands[args.command](args)
 
 
