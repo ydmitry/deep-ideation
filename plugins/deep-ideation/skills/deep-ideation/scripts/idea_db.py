@@ -19,6 +19,7 @@ Usage:
     python idea_db.py stats <workspace>                                   # Summary stats
     python idea_db.py show <workspace> [--columns "name,tag,ice_score"]   # Show DB (optional column filter)
     python idea_db.py export_md <workspace> [--columns "..."] [--sort "..."] [--desc]  # Export as markdown table
+    python idea_db.py describe <workspace>                   # Show current schema: columns, types, fill rates
 """
 
 import argparse
@@ -87,6 +88,7 @@ def cmd_add(args):
     rows.append(row)
     write_db(args.workspace, columns, rows)
     print(f"Added idea #{new_id}: {args.name}")
+    print(f"ID: {new_id}")
 
 
 def cmd_add_batch(args):
@@ -106,7 +108,9 @@ def cmd_add_batch(args):
         added += 1
 
     write_db(args.workspace, columns, rows)
-    print(f"Added {added} ideas (IDs {int(rows[-added]['id'])} to {rows[-1]['id']})")
+    added_ids = [rows[-(added - i)]["id"] for i in range(added)]
+    print(f"Added {added} ideas")
+    print(f"IDs: {','.join(added_ids)}")
 
 
 def cmd_add_column(args):
@@ -433,6 +437,54 @@ def cmd_multi_filter(args):
         print(f"  #{row['id']} {row['name']} [{scores}]")
 
 
+def cmd_describe(args):
+    """Describe the current CSV schema: columns in order, types, fill rates, and which phase added them."""
+    columns, rows = read_db(args.workspace)
+    total = len(rows)
+
+    print(f"## ideas.csv schema — {total} ideas\n")
+    print(f"| # | Column | Type | Filled | Empty | Example |")
+    print(f"|---|--------|------|--------|-------|---------|")
+
+    for i, col in enumerate(columns, 1):
+        filled = 0
+        empty = 0
+        example = ""
+        is_numeric = True
+        for r in rows:
+            val = r.get(col, "").strip()
+            if val:
+                filled += 1
+                if not example:
+                    example = val[:50]
+                try:
+                    float(val)
+                except (ValueError, TypeError):
+                    is_numeric = False
+            else:
+                empty += 1
+
+        if total == 0:
+            col_type = "builtin" if col in BUILT_IN_COLUMNS else "added"
+        elif col in BUILT_IN_COLUMNS:
+            col_type = "builtin"
+        elif is_numeric and filled > 0:
+            col_type = "numeric"
+        else:
+            col_type = "text"
+
+        fill_pct = f"{filled}/{total}" if total > 0 else "0/0"
+        example_display = example.replace("|", "\\|") if example else "—"
+        print(f"| {i} | {col} | {col_type} | {fill_pct} | {empty} | {example_display} |")
+
+    # Show columns grouped by likely phase origin
+    added_cols = [c for c in columns if c not in BUILT_IN_COLUMNS]
+    if added_cols:
+        print(f"\n## Dynamic columns ({len(added_cols)}):")
+        for col in added_cols:
+            print(f"  - {col}")
+
+
 def cmd_unscored(args):
     """Show ideas that haven't been scored on a given column."""
     columns, rows = read_db(args.workspace)
@@ -572,6 +624,10 @@ def main():
     p.add_argument("workspace")
     p.add_argument("--conditions", required=True, help="Comma-separated conditions: 'col>val,col2<=val2,col3=val3'")
 
+    # describe
+    p = subparsers.add_parser("describe")
+    p.add_argument("workspace")
+
     # unscored
     p = subparsers.add_parser("unscored")
     p.add_argument("workspace")
@@ -588,7 +644,7 @@ def main():
         "sort": cmd_sort, "filter": cmd_filter, "filter_above": cmd_filter_above,
         "top": cmd_top, "stats": cmd_stats, "show": cmd_show, "export_md": cmd_export_md,
         "add_criteria": cmd_add_criteria, "compute": cmd_compute,
-        "multi_filter": cmd_multi_filter, "unscored": cmd_unscored,
+        "multi_filter": cmd_multi_filter, "describe": cmd_describe, "unscored": cmd_unscored,
     }
     commands[args.command](args)
 

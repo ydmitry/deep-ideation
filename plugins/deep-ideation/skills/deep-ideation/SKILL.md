@@ -154,13 +154,19 @@ Spawn Agent:
 2. **Pass short summaries** (2-5 sentences) between phases for context.
 3. **Problem statement** goes to every subagent.
 4. **Mandatory output standards** (above) go to every subagent.
-5. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
+5. **`$WORKSPACE` path** goes to every subagent — they use it for all `idea_db.py` commands.
+6. **`references/idea-db.md`** path goes to every subagent that writes or reads ideas (Phases 3-10). The CSV is the shared state — agents read and write `$WORKSPACE/ideas.csv` via `python scripts/idea_db.py` commands documented in each phase/agent file.
+7. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
 
 ## The Idea Database
 
 Every idea is tracked in `$WORKSPACE/ideas.csv`. See `references/idea-db.md` for commands. Key:
 ```bash
-python scripts/idea_db.py add_batch <ws> seeds.json   # bulk add
+python scripts/idea_db.py init <ws>                    # create empty DB
+python scripts/idea_db.py describe <ws>                # show current schema: columns, types, fill rates
+python scripts/idea_db.py add_batch <ws> seeds.json    # bulk add
 python scripts/idea_db.py top <ws> ice_score --n 5     # query top
 python scripts/idea_db.py export_md <ws>               # markdown export
 ```
+
+**Every subagent should run `describe` first** to discover which columns exist from prior phases before reading or writing the CSV.

@@ -84,6 +84,36 @@ AskUserQuestion:
 5. Skip Brainwriter + Tension Analyzer (faster)
 6. Synthesizer produces merged output
 
+## Recording Decisions in CSV
+
+Before saving, run `describe` to see available columns, then record the user's decisions:
+
+```bash
+# Check current schema
+python scripts/idea_db.py describe <workspace>
+
+# Add convergence columns
+python scripts/idea_db.py add_column <workspace> proof_verdict --default ""
+python scripts/idea_db.py add_column <workspace> selected --default "no"
+python scripts/idea_db.py add_column <workspace> user_action --default ""
+
+# Record proof search verdicts for top ideas
+python scripts/idea_db.py set <workspace> <id> proof_verdict "validated"
+python scripts/idea_db.py set <workspace> <id> proof_verdict "unvalidated"
+python scripts/idea_db.py set <workspace> <id> proof_verdict "counter-evidence"
+
+# Mark ideas the user selected
+python scripts/idea_db.py set <workspace> <id> selected "yes"
+
+# Record what the user wants to do with each selected idea
+python scripts/idea_db.py set <workspace> <id> user_action "act_on"
+python scripts/idea_db.py set <workspace> <id> user_action "research_deeper"
+python scripts/idea_db.py set <workspace> <id> user_action "combine"
+python scripts/idea_db.py set <workspace> <id> user_action "saved_for_later"
+```
+
+This ensures the Historian in future sessions can see not just which ideas scored well, but which ones the user actually chose to act on.
+
 ## Saving the Session
 
 Regardless of what the user decides, confirm:
