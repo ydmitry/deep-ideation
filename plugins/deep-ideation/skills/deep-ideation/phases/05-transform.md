@@ -18,6 +18,22 @@ Each John gets:
 - ICE anchors: `$WORKSPACE/ice-anchors.md`
 - The TRIZ trade-off question (from Innovator)
 
+### Reading Your Seed Batch from CSV
+
+Each John reads ONLY its assigned seeds — not the full CSV:
+
+```bash
+# Check how many seeds total
+python scripts/idea_db.py size <workspace>
+
+# Read only YOUR assigned seeds (Phase 4 set assigned_to for each seed)
+python scripts/idea_db.py filter <workspace> assigned_to JohnA
+# Or for seeds assigned to multiple Johns:
+python scripts/idea_db.py filter <workspace> assigned_to JohnAB
+```
+
+Use the IDs from this output as your source seeds. Every transformed idea must trace back to one of these seed IDs via the `source_seed` field.
+
 **Special launch order:** MIRROR zone Johns must launch AFTER other Johns have produced Mode 1 output, so they can read it first.
 
 ## Temperature Zone Recap (HARD CONSTRAINTS)

@@ -20,6 +20,7 @@ Usage:
     python idea_db.py show <workspace> [--columns "name,tag,ice_score"]   # Show DB (optional column filter)
     python idea_db.py export_md <workspace> [--columns "..."] [--sort "..."] [--desc]  # Export as markdown table
     python idea_db.py describe <workspace>                   # Show current schema: columns, types, fill rates
+    python idea_db.py size <workspace>                      # Row count + breakdown by phase
 """
 
 import argparse
@@ -506,6 +507,22 @@ def cmd_describe(args):
             print(f"  - {col}")
 
 
+def cmd_size(args):
+    """Print the number of rows in the DB. Useful for parallel agents to check state."""
+    columns, rows = read_db(args.workspace)
+    total = len(rows)
+    print(f"SIZE: {total}")
+    # Also show breakdown by phase if rows exist
+    if rows:
+        phases = {}
+        for r in rows:
+            p = r.get("phase", "")
+            if p:
+                phases[p] = phases.get(p, 0) + 1
+        if phases:
+            print(f"BY_PHASE: {','.join(f'{k}={v}' for k, v in sorted(phases.items()))}")
+
+
 def cmd_unscored(args):
     """Show ideas that haven't been scored on a given column."""
     columns, rows = read_db(args.workspace)
@@ -645,6 +662,10 @@ def main():
     p.add_argument("workspace")
     p.add_argument("--conditions", required=True, help="Comma-separated conditions: 'col>val,col2<=val2,col3=val3'")
 
+    # size
+    p = subparsers.add_parser("size")
+    p.add_argument("workspace")
+
     # describe
     p = subparsers.add_parser("describe")
     p.add_argument("workspace")
@@ -665,7 +686,7 @@ def main():
         "sort": cmd_sort, "filter": cmd_filter, "filter_above": cmd_filter_above,
         "top": cmd_top, "stats": cmd_stats, "show": cmd_show, "export_md": cmd_export_md,
         "add_criteria": cmd_add_criteria, "compute": cmd_compute,
-        "multi_filter": cmd_multi_filter, "describe": cmd_describe, "unscored": cmd_unscored,
+        "multi_filter": cmd_multi_filter, "size": cmd_size, "describe": cmd_describe, "unscored": cmd_unscored,
     }
 
     # All commands except init acquire an exclusive file lock so parallel
