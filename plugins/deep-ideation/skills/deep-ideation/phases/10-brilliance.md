@@ -36,3 +36,7 @@ ICE rewards the best ideas within the expected solution space. Brilliance finds 
 ## Output Location
 
 Appended to `$WORKSPACE/08-synthesize.md` as the final section before CONVERGE. The Brilliant Ideas section should leave the user with the clearest, sharpest ideas from the session — right before they decide what to pursue.
+
+## Anti-Patterns
+- **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
+- **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.

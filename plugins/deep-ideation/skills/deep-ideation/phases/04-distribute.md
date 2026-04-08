@@ -167,3 +167,22 @@ Every John receives:
 9. ICE anchor calibration (`$WORKSPACE/ice-anchors.md`)
 
 Save distribution plan to `$WORKSPACE/04-distribute.md`. Include: John count, zones assigned, budget constraints if any, seed counts per John.
+
+## Output Requirements
+
+Return a short summary to the orchestrator containing:
+1. **Triage results**: count of Hot / Warm / Cold / Discard seeds
+2. **John lineup**: count, temperature zones, second constraints (if any)
+3. **Distribution plan**: which seed batches go to which John
+4. **Cold seed injection plan**: which cold seeds injected into which Johns
+
+### Mandatory Idea Description Rules
+
+Every idea description — in all phases — must follow these rules:
+- 2-3 sentences max. First sentence: what is it (mechanism + concrete example). Second: why it matters (impact).
+- NO jargon, NO internal terminology. Self-contained: zero context needed.
+- Every idea in the CSV must have: `description` (coffee-talk), `pros` (2-3 advantages), `cons` (2-3 risks), `requires` (what must exist first).
+
+## Anti-Patterns
+- **Don't skip Seed Triage** — hot seeds are the signal; cold seeds might be hidden gems
+- **Don't give all Johns the same seeds** — temperature zones + different batches is what produces divergence

@@ -76,3 +76,6 @@ python scripts/idea_db.py export_md <workspace> \
 Save to `$WORKSPACE/08-synthesize.md`. This is the primary deliverable.
 
 The Idea Menu is the most action-oriented output — format it clearly for the user.
+
+## Anti-Patterns
+- **Don't generate 48-hour experiments** — they sound actionable but nobody does them. Generate proof search queries instead. A 10-minute web search produces more validation than a hypothetical experiment design.

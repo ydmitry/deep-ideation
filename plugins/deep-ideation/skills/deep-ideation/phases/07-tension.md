@@ -47,3 +47,6 @@ python scripts/idea_db.py set_batch <workspace> triz-status.json
 # Check which ideas resolve the core contradiction
 python scripts/idea_db.py filter <workspace> triz_status resolves
 ```
+
+## Anti-Patterns
+- **Don't skip Tension Analysis** — the Groan Zone is where the most surprising ideas emerge (warm zones still need bridging)

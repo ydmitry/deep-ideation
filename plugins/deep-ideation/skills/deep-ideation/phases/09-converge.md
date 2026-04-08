@@ -112,3 +112,30 @@ AskUserQuestion:
 - `$WORKSPACE/ice-anchors.md` — scoring calibration for reference
 
 The Historian will scan these files in future sessions.
+
+## Output Requirements
+
+Return a short summary to the orchestrator containing:
+1. **Filtered ideas**: the 2-3 best-fit ideas based on user's constraints
+2. **Proof search verdicts**: Market validated / Unvalidated / Counter-evidence per idea
+3. **User's decision**: which idea(s) to act on
+4. **Round 2 decision** (DEEP mode): whether to run a second round, and if so, the new direction
+
+### Mandatory Idea Description Rules
+
+Every idea description — in all phases — must follow these rules:
+- 2-3 sentences max. First sentence: what is it (mechanism + concrete example). Second: why it matters (impact).
+- NO jargon, NO internal terminology. Self-contained: zero context needed.
+- Every idea in the CSV must have: `description` (coffee-talk), `pros` (2-3 advantages), `cons` (2-3 risks), `requires` (what must exist first).
+
+## Iterative Rounds (DEEP mode)
+
+After convergence, offer the user a second round:
+
+**Round 2 flow:**
+1. Top 3-5 from Round 1 become new seeds (phase=round2_seed)
+2. User-specified new direction becomes a new HMW question
+3. Run: Innovator + Connector (specialists only)
+4. One John (user picks zone, or default PLASMA)
+5. Skip Brainwriter + Tension Analyzer (faster)
+6. Synthesizer produces merged output combining Round 1 + Round 2 ideas
