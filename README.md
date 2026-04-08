@@ -1,6 +1,6 @@
 # deep-ideation
 
-Multi-agent parallel brainstorming skill for Claude. Specialist agents generate 40-60 seed ideas using SCAMPER, TRIZ, Reverse Brainstorming, and Synectics. Generalist agents ("Johns") then transform those seeds through Disney Creative Strategy spirals in parallel, each constrained to a different temperature zone (FIRE/PLASMA/ICE/GHOST/CHAOS/MIRROR) to prevent convergence. Final output is a scored Idea Menu of Quick Wins, Core Bets, and Moonshots with stress-tested confidence scores.
+A Claude skill that runs multiple AI agents in parallel to brainstorm ideas at depth. Agents generate, transform, stress-test, and score ideas — producing a prioritized menu of Quick Wins, Core Bets, and Moonshots.
 
 ## Complexity Modes
 
