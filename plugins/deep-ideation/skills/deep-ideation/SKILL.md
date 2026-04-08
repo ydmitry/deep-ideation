@@ -155,6 +155,28 @@ Spawn Agent:
 - Input: `$WORKSPACE/08-synthesize.md` (complete Idea Menu + brilliance), `$WORKSPACE/09.5-stress-test.md` (if run), `$WORKSPACE/ideas.csv`, all workspace paths
 - Produces: filtered 2-3 best-fit ideas, proof search verdicts, user decision, Round 2 decision (DEEP) → `$WORKSPACE/09-converge.md` + updated ideas.csv (selected, proof_verdict, user_action)
 
+## Parallel Splitting
+
+When a phase has many ideas to process (50+), the orchestrator can split work across parallel agents using `size` and `slice`:
+
+```bash
+# 1. Check how many ideas need processing
+python scripts/idea_db.py size $WORKSPACE
+# → SIZE: 150, BY_PHASE: seed=44,transform=106
+
+# 2. Split into N agents by ID range
+python scripts/idea_db.py slice $WORKSPACE --ids 1-50     # → Agent 1
+python scripts/idea_db.py slice $WORKSPACE --ids 51-100    # → Agent 2
+python scripts/idea_db.py slice $WORKSPACE --ids 101-150   # → Agent 3
+
+# Or filter by phase first, then split
+python scripts/idea_db.py slice $WORKSPACE --phase transform --ids 45-90
+```
+
+Pass the `--ids` range to each parallel agent. The agent uses `slice` to read only its batch, processes those ideas, and writes results back using the IDs from the slice output.
+
+**When to split:** Consider parallel agents when a single phase would process 50+ ideas (e.g., scoring 150 ideas in SYNTHESIZE, or running hat eval on many build outputs in DEEP mode).
+
 ## Inter-Phase Data Rules
 
 1. **Pass file paths, not content.** Subagents read workspace files directly.

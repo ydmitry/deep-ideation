@@ -21,6 +21,9 @@ Usage:
     python idea_db.py export_md <workspace> [--columns "..."] [--sort "..."] [--desc]  # Export as markdown table
     python idea_db.py describe <workspace>                   # Show current schema: columns, types, fill rates
     python idea_db.py size <workspace>                      # Row count + breakdown by phase
+    python idea_db.py slice <workspace> --ids 1-50          # Get ideas by ID range (for parallel splits)
+    python idea_db.py slice <workspace> --offset 0 --limit 50  # Get ideas by offset+limit
+    python idea_db.py slice <workspace> --phase build --ids 60-80  # Filter by phase, then slice
 """
 
 import argparse
@@ -523,6 +526,42 @@ def cmd_size(args):
             print(f"BY_PHASE: {','.join(f'{k}={v}' for k, v in sorted(phases.items()))}")
 
 
+def cmd_slice(args):
+    """Return a subset of ideas by ID range or offset+limit. For splitting work across parallel agents.
+
+    Usage:
+        idea_db.py slice <workspace> --ids 1-50        # IDs 1 through 50
+        idea_db.py slice <workspace> --ids 51-100      # IDs 51 through 100
+        idea_db.py slice <workspace> --offset 0 --limit 50   # first 50 rows
+        idea_db.py slice <workspace> --offset 50 --limit 50  # next 50 rows
+        idea_db.py slice <workspace> --phase seed      # filter by phase, then slice
+        idea_db.py slice <workspace> --phase build --ids 60-80
+    """
+    columns, rows = read_db(args.workspace)
+
+    # Optional phase filter first
+    if args.phase:
+        rows = [r for r in rows if r.get("phase", "") == args.phase]
+
+    # Slice by ID range or offset+limit
+    if args.ids:
+        parts = args.ids.split("-")
+        id_start = int(parts[0])
+        id_end = int(parts[1]) if len(parts) > 1 else id_start
+        sliced = [r for r in rows if id_start <= int(r.get("id", 0)) <= id_end]
+    else:
+        offset = args.offset or 0
+        limit = args.limit or len(rows)
+        sliced = rows[offset:offset + limit]
+
+    ids = [r["id"] for r in sliced]
+    print(f"SLICE: {len(sliced)} ideas")
+    print(f"IDS: {','.join(ids)}")
+    for row in sliced:
+        scores = " | ".join(f"{c}={row.get(c, '')}" for c in columns if c not in BUILT_IN_COLUMNS and row.get(c, ""))
+        print(f"  #{row['id']} {row['name']} [{scores}]" if scores else f"  #{row['id']} {row['name']}")
+
+
 def cmd_unscored(args):
     """Show ideas that haven't been scored on a given column."""
     columns, rows = read_db(args.workspace)
@@ -666,6 +705,14 @@ def main():
     p = subparsers.add_parser("size")
     p.add_argument("workspace")
 
+    # slice
+    p = subparsers.add_parser("slice")
+    p.add_argument("workspace")
+    p.add_argument("--ids", default="", help="ID range: '1-50' or '51-100'")
+    p.add_argument("--offset", type=int, default=0, help="Row offset (0-based)")
+    p.add_argument("--limit", type=int, default=0, help="Max rows to return")
+    p.add_argument("--phase", default="", help="Filter by phase before slicing")
+
     # describe
     p = subparsers.add_parser("describe")
     p.add_argument("workspace")
@@ -686,7 +733,8 @@ def main():
         "sort": cmd_sort, "filter": cmd_filter, "filter_above": cmd_filter_above,
         "top": cmd_top, "stats": cmd_stats, "show": cmd_show, "export_md": cmd_export_md,
         "add_criteria": cmd_add_criteria, "compute": cmd_compute,
-        "multi_filter": cmd_multi_filter, "size": cmd_size, "describe": cmd_describe, "unscored": cmd_unscored,
+        "multi_filter": cmd_multi_filter, "size": cmd_size, "slice": cmd_slice,
+        "describe": cmd_describe, "unscored": cmd_unscored,
     }
 
     # All commands except init acquire an exclusive file lock so parallel
