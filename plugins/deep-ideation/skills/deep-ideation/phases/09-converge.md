@@ -160,12 +160,4 @@ Every idea description — in all phases — must follow these rules:
 
 ## Iterative Rounds (DEEP mode)
 
-After convergence, offer the user a second round:
-
-**Round 2 flow:**
-1. Top 3-5 from Round 1 become new seeds (phase=round2_seed)
-2. User-specified new direction becomes a new HMW question
-3. Run: Innovator + Connector (specialists only)
-4. One John (user picks zone, or default PLASMA)
-5. Skip Brainwriter + Tension Analyzer (faster)
-6. Synthesizer produces merged output combining Round 1 + Round 2 ideas
+See Part 3 above for the full Round 2 flow and user prompts.
