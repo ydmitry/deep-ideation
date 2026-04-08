@@ -40,9 +40,17 @@ Save to `$WORKSPACE/07-tension.md` + add Bridge ideas to DB (phase=tension).
 ## Key Commands
 
 ```bash
-# After tension analysis, update TRIZ status
+# Discover current schema
+python scripts/idea_db.py describe <workspace>
+
+# Update TRIZ status on existing ideas (column may already exist from TRANSFORM)
 python scripts/idea_db.py add_column <workspace> triz_status --default ""
 python scripts/idea_db.py set_batch <workspace> triz-status.json
+
+# Add Bridge ideas as new rows
+# The output will print IDs: 75,76,77... — use these for set calls
+python scripts/idea_db.py add_batch <workspace> bridge-ideas.json
+# JSON format: [{"name":"...","description":"...","source_agent":"Tension Analyzer","chain":"Tension: [X vs Y] → Bridge → ...","tag":"BOLD","phase":"tension"}]
 
 # Check which ideas resolve the core contradiction
 python scripts/idea_db.py filter <workspace> triz_status resolves

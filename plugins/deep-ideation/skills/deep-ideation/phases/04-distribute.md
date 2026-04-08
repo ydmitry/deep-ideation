@@ -39,12 +39,17 @@ You should find 5-15 hot seeds per session. If fewer than 5, the problem brief m
 
 ### Triage Process
 
-Add a triage column:
 ```bash
+# Discover current schema and see all seed IDs
+python scripts/idea_db.py describe <workspace>
+
+# Add a triage column
 python scripts/idea_db.py add_column <workspace> triage_category --default "warm"
-# Set hot/cold/discard for each non-warm seed
-python scripts/idea_db.py set <workspace> 7 triage_category hot
-python scripts/idea_db.py set <workspace> 23 triage_category discard
+
+# Set hot/cold/discard for each non-warm seed — use actual IDs from describe output
+python scripts/idea_db.py set <workspace> <id> triage_category hot
+python scripts/idea_db.py set <workspace> <id> triage_category cold
+python scripts/idea_db.py set <workspace> <id> triage_category discard
 ```
 
 ### Wild Card Cold Seeds

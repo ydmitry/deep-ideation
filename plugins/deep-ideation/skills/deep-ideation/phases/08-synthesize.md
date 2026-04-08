@@ -51,6 +51,14 @@ Save condensed seed bank to `$WORKSPACE/seed-bank.md`.
 ## Key Commands
 
 ```bash
+# Discover current schema — check which columns exist from prior phases
+python scripts/idea_db.py describe <workspace>
+
+# Add hybrid ideas as new rows before scoring
+# The output will print IDs: 80,81,82... — use these for set calls
+python scripts/idea_db.py add_batch <workspace> hybrid-ideas.json
+# JSON format: [{"name":"...","description":"...","source_agent":"Synthesizer","chain":"Hybrid: #12 + #34 → ...","tag":"BOLD","phase":"synthesis"}]
+
 # Score all ideas
 python scripts/idea_db.py set_batch <workspace> scores.json
 

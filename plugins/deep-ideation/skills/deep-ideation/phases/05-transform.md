@@ -76,14 +76,36 @@ Output scales with John count. Per John: 10-15 ideas.
 
 Each John saves to:
 - `$WORKSPACE/05-john-[a/b/c/d/e].md` — full output with chains
-- Idea DB: `phase=transform, temperature_zone=[zone], second_constraint=[axis:value or none]`
+- Idea DB via commands below
+
+### Writing to the Idea Database
+
+```bash
+# First, discover current schema
+python scripts/idea_db.py describe <workspace>
+
+# Add columns for this phase (idempotent — safe if already exists)
+python scripts/idea_db.py add_column <workspace> temperature_zone
+python scripts/idea_db.py add_column <workspace> second_constraint --default "none"
+python scripts/idea_db.py add_column <workspace> triz_status --default ""
+
+# Add all transformed ideas as new rows
+# The output will print IDs: 15,16,17,... — use these for set calls below
+python scripts/idea_db.py add_batch <workspace> john-[a]-ideas.json
+# JSON format: [{"name":"...","description":"...","source_agent":"John A","source_seed":"3","chain":"SEED #3 → ...","tag":"BOLD","phase":"transform"}]
+
+# Set zone + constraint + triz_status on each added idea using returned IDs
+python scripts/idea_db.py set <workspace> <id> temperature_zone "FIRE"
+python scripts/idea_db.py set <workspace> <id> second_constraint "budget:$0"
+python scripts/idea_db.py set <workspace> <id> triz_status "resolves"
+```
 
 ## TRIZ Trade-Off Engagement
 
 Each John should explicitly answer the trade-off question from the Innovator:
 > "Does your best transformed idea RESOLVE the contradiction [X vs Y], PICK A SIDE, or SIDESTEP it?"
 
-Record in the DB: `triz_status = resolves / picks_side / sidesteps`
+Record in the DB using the `triz_status` column: `resolves` / `picks_side` / `sidesteps`
 
 ## While Running
 
