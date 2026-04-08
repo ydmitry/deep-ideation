@@ -181,12 +181,7 @@ Return a short summary to the orchestrator containing:
 3. **Distribution plan**: which seed batches go to which John
 4. **Cold seed injection plan**: which cold seeds injected into which Johns
 
-### Mandatory Idea Description Rules
-
-Every idea description — in all phases — must follow these rules:
-- 2-3 sentences max. First sentence: what is it (mechanism + concrete example). Second: why it matters (impact).
-- NO jargon, NO internal terminology. Self-contained: zero context needed.
-- Every idea in the CSV must have: `description` (coffee-talk), `pros` (2-3 advantages), `cons` (2-3 risks), `requires` (what must exist first).
+See `references/output-rules.md` for mandatory idea description and CSV column rules.
 
 ## Anti-Patterns
 - **Don't skip Seed Triage** — hot seeds are the signal; cold seeds might be hidden gems

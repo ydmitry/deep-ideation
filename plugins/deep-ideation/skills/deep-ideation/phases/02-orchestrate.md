@@ -77,12 +77,7 @@ Save orchestration plan to `$WORKSPACE/02-orchestrate.md`. Return a short summar
 4. **ICE anchor calibration** saved to `$WORKSPACE/ice-anchors.md`
 5. **Seed distribution plan** (which seeds go to which John, with temperature zones)
 
-### Mandatory Idea Description Rules
-
-Every idea description — in all phases — must follow these rules:
-- 2-3 sentences max. First sentence: what is it (mechanism + concrete example). Second: why it matters (impact).
-- NO jargon, NO internal terminology. Self-contained: zero context needed.
-- Every idea in the CSV must have: `description` (coffee-talk), `pros` (2-3 advantages), `cons` (2-3 risks), `requires` (what must exist first).
+See `references/output-rules.md` for mandatory idea description and CSV column rules.
 
 ## Anti-Patterns
 - **Don't use generic ICE anchors** — calibrate to the session's specific root causes

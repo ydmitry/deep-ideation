@@ -93,12 +93,7 @@ Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator 
 
 If Historian ran (DEEP mode), also save `$WORKSPACE/01-historian.md` with up to 15 cross-domain seeds.
 
-### Mandatory Idea Description Rules
-
-Every idea description — in all phases — must follow these rules:
-- 2-3 sentences max. First sentence: what is it (mechanism + concrete example). Second: why it matters (impact).
-- NO jargon, NO internal terminology. Self-contained: zero context needed.
-- Every idea in the CSV must have: `description` (coffee-talk), `pros` (2-3 advantages), `cons` (2-3 risks), `requires` (what must exist first).
+See `references/output-rules.md` for mandatory idea description and CSV column rules.
 
 ## What Gets Distributed to All Agents
 

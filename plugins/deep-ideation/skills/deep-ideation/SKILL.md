@@ -30,11 +30,10 @@ python scripts/idea_db.py init "$WORKSPACE"
 
 ## Mandatory Output Standards
 
-Pass these to EVERY subagent prompt:
-
-> **Idea descriptions:** 2-3 sentences, coffee-talk style. First sentence: mechanism + concrete example. Second: impact. No jargon. Self-contained.
-> **Required CSV columns:** `description` (coffee-talk), `pros` (2-3 advantages), `cons` (2-3 risks), `requires` (what must exist first).
-> **Idea Menu buckets:** Quick Wins (Ease ≥7, Confidence ≥6), Core Bets (Impact ≥8, Confidence ≥5), Moonshots (Impact ≥9, Novelty ≥8).
+Every subagent prompt must include `references/output-rules.md` in its file list. This file contains:
+- Idea description rules (coffee-talk, 2-3 sentences, no jargon)
+- Required CSV columns (`description`, `pros`, `cons`, `requires`)
+- Idea Menu bucket definitions (Quick Wins / Core Bets / Moonshots)
 
 ## Phase Orchestration
 
