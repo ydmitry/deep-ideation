@@ -81,6 +81,20 @@ AskUserQuestion:
     - "Change the TRIZ contradiction"
 ```
 
+## Output Requirements
+
+Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator containing:
+
+1. **Root causes** (3-4, one sentence each — must arrive at different root causes per angle)
+2. **HMW questions** (4-6, each pointing in a different direction)
+3. **TRIZ trade-off** ("Improving X worsens Y")
+4. **Depth-layered ideas** (surface/mid/root per angle)
+5. **Complexity mode** selected by the user
+
+If Historian ran (DEEP mode), also save `$WORKSPACE/01-historian.md` with up to 15 cross-domain seeds.
+
+See `references/output-rules.md` for mandatory idea description and CSV column rules.
+
 ## What Gets Distributed to All Agents
 
 After DISCOVER, every agent receives:
@@ -90,3 +104,6 @@ After DISCOVER, every agent receives:
 - **TRIZ trade-off** ("Improving X worsens Y")
 - **IFR** (Ideal Final Result, set in ORCHESTRATE)
 - **Historical seeds** (if Historian ran — DEEP mode)
+
+## Anti-Patterns
+- **Don't skip DISCOVER** — the divergent 5 Whys + HMW is the single most valuable output of the entire skill

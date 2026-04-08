@@ -19,21 +19,54 @@ Usage:
     python idea_db.py stats <workspace>                                   # Summary stats
     python idea_db.py show <workspace> [--columns "name,tag,ice_score"]   # Show DB (optional column filter)
     python idea_db.py export_md <workspace> [--columns "..."] [--sort "..."] [--desc]  # Export as markdown table
+    python idea_db.py describe <workspace>                   # Show current schema: columns, types, fill rates
+    python idea_db.py size <workspace>                      # Row count + breakdown by phase
+    python idea_db.py slice <workspace> --ids 1-50          # Get ideas by ID range (for parallel splits)
+    python idea_db.py slice <workspace> --offset 0 --limit 50  # Get ideas by offset+limit
+    python idea_db.py slice <workspace> --phase build --ids 60-80  # Filter by phase, then slice
 """
 
 import argparse
 import csv
+import fcntl
 import json
 import os
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 DB_FILENAME = "ideas.csv"
+LOCK_FILENAME = "ideas.csv.lock"
 BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase"]
 
 
 def get_db_path(workspace):
     return os.path.join(workspace, DB_FILENAME)
+
+
+def get_lock_path(workspace):
+    return os.path.join(workspace, LOCK_FILENAME)
+
+
+READ_ONLY_COMMANDS = frozenset({
+    "describe", "size", "slice", "filter", "filter_above",
+    "top", "stats", "show", "export_md", "unscored",
+})
+
+
+@contextmanager
+def locked_db(workspace, *, shared=False):
+    """Acquire a file lock before reading/writing the CSV.
+    Read-only commands use a shared lock (LOCK_SH) so they don't block each other.
+    Write commands use an exclusive lock (LOCK_EX) so parallel agents don't corrupt the CSV."""
+    lock_path = get_lock_path(workspace)
+    lock_fd = open(lock_path, "w")
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        lock_fd.close()
 
 
 def read_db(workspace):
@@ -87,6 +120,7 @@ def cmd_add(args):
     rows.append(row)
     write_db(args.workspace, columns, rows)
     print(f"Added idea #{new_id}: {args.name}")
+    print(f"ID: {new_id}")
 
 
 def cmd_add_batch(args):
@@ -106,7 +140,9 @@ def cmd_add_batch(args):
         added += 1
 
     write_db(args.workspace, columns, rows)
-    print(f"Added {added} ideas (IDs {int(rows[-added]['id'])} to {rows[-1]['id']})")
+    added_ids = [rows[-(added - i)]["id"] for i in range(added)]
+    print(f"Added {added} ideas")
+    print(f"IDs: {','.join(added_ids)}")
 
 
 def cmd_add_column(args):
@@ -433,6 +469,112 @@ def cmd_multi_filter(args):
         print(f"  #{row['id']} {row['name']} [{scores}]")
 
 
+def cmd_describe(args):
+    """Describe the current CSV schema: columns in order, types, fill rates, and which phase added them."""
+    columns, rows = read_db(args.workspace)
+    total = len(rows)
+
+    print(f"## ideas.csv schema — {total} ideas\n")
+    print(f"| # | Column | Type | Filled | Empty | Example |")
+    print(f"|---|--------|------|--------|-------|---------|")
+
+    for i, col in enumerate(columns, 1):
+        filled = 0
+        empty = 0
+        example = ""
+        is_numeric = True
+        for r in rows:
+            val = r.get(col, "").strip()
+            if val:
+                filled += 1
+                if not example:
+                    example = val[:50]
+                try:
+                    float(val)
+                except (ValueError, TypeError):
+                    is_numeric = False
+            else:
+                empty += 1
+
+        if total == 0:
+            col_type = "builtin" if col in BUILT_IN_COLUMNS else "added"
+        elif col in BUILT_IN_COLUMNS:
+            col_type = "builtin"
+        elif is_numeric and filled > 0:
+            col_type = "numeric"
+        else:
+            col_type = "text"
+
+        fill_pct = f"{filled}/{total}" if total > 0 else "0/0"
+        example_display = example.replace("|", "\\|") if example else "—"
+        print(f"| {i} | {col} | {col_type} | {fill_pct} | {empty} | {example_display} |")
+
+    # Show columns grouped by likely phase origin
+    added_cols = [c for c in columns if c not in BUILT_IN_COLUMNS]
+    if added_cols:
+        print(f"\n## Dynamic columns ({len(added_cols)}):")
+        for col in added_cols:
+            print(f"  - {col}")
+
+
+def cmd_size(args):
+    """Print the number of rows in the DB. Useful for parallel agents to check state."""
+    columns, rows = read_db(args.workspace)
+    total = len(rows)
+    print(f"SIZE: {total}")
+    # Also show breakdown by phase if rows exist
+    if rows:
+        phases = {}
+        for r in rows:
+            p = r.get("phase", "")
+            if p:
+                phases[p] = phases.get(p, 0) + 1
+        if phases:
+            print(f"BY_PHASE: {','.join(f'{k}={v}' for k, v in sorted(phases.items()))}")
+
+
+def cmd_slice(args):
+    """Return a subset of ideas by ID range or offset+limit. For splitting work across parallel agents.
+
+    Usage:
+        idea_db.py slice <workspace> --ids 1-50        # IDs 1 through 50
+        idea_db.py slice <workspace> --ids 51-100      # IDs 51 through 100
+        idea_db.py slice <workspace> --offset 0 --limit 50   # first 50 rows
+        idea_db.py slice <workspace> --offset 50 --limit 50  # next 50 rows
+        idea_db.py slice <workspace> --phase seed      # filter by phase, then slice
+        idea_db.py slice <workspace> --phase build --ids 60-80
+    """
+    columns, rows = read_db(args.workspace)
+
+    # Optional phase filter first
+    if args.phase:
+        rows = [r for r in rows if r.get("phase", "") == args.phase]
+
+    # Slice by ID range or offset+limit
+    if args.ids:
+        parts = args.ids.split("-")
+        id_start = int(parts[0])
+        id_end = int(parts[1]) if len(parts) > 1 else id_start
+        sliced = [r for r in rows if id_start <= int(r.get("id", 0)) <= id_end]
+    else:
+        offset = args.offset or 0
+        limit = args.limit or len(rows)
+        sliced = rows[offset:offset + limit]
+
+    if not sliced and args.ids:
+        all_ids = [int(r.get("id", 0)) for r in rows]
+        max_id = max(all_ids) if all_ids else 0
+        print(f"WARNING: No ideas found in range {args.ids}. "
+              f"Available IDs: 1-{max_id} ({len(rows)} ideas after filters).", file=sys.stderr)
+
+    ids = [r["id"] for r in sliced]
+    print(f"SLICE: {len(sliced)} ideas")
+    print(f"IDS: {','.join(ids)}")
+    for row in sliced:
+        scores = " | ".join(f"{c}={row.get(c, '')}" for c in columns if c not in BUILT_IN_COLUMNS and row.get(c, ""))
+        print(f"  #{row['id']} {row['name']} [{scores}]" if scores else f"  #{row['id']} {row['name']}")
+
+
 def cmd_unscored(args):
     """Show ideas that haven't been scored on a given column."""
     columns, rows = read_db(args.workspace)
@@ -572,6 +714,22 @@ def main():
     p.add_argument("workspace")
     p.add_argument("--conditions", required=True, help="Comma-separated conditions: 'col>val,col2<=val2,col3=val3'")
 
+    # size
+    p = subparsers.add_parser("size")
+    p.add_argument("workspace")
+
+    # slice
+    p = subparsers.add_parser("slice")
+    p.add_argument("workspace")
+    p.add_argument("--ids", default="", help="ID range: '1-50' or '51-100'")
+    p.add_argument("--offset", type=int, default=0, help="Row offset (0-based)")
+    p.add_argument("--limit", type=int, default=0, help="Max rows to return")
+    p.add_argument("--phase", default="", help="Filter by phase before slicing")
+
+    # describe
+    p = subparsers.add_parser("describe")
+    p.add_argument("workspace")
+
     # unscored
     p = subparsers.add_parser("unscored")
     p.add_argument("workspace")
@@ -588,9 +746,19 @@ def main():
         "sort": cmd_sort, "filter": cmd_filter, "filter_above": cmd_filter_above,
         "top": cmd_top, "stats": cmd_stats, "show": cmd_show, "export_md": cmd_export_md,
         "add_criteria": cmd_add_criteria, "compute": cmd_compute,
-        "multi_filter": cmd_multi_filter, "unscored": cmd_unscored,
+        "multi_filter": cmd_multi_filter, "size": cmd_size, "slice": cmd_slice,
+        "describe": cmd_describe, "unscored": cmd_unscored,
     }
-    commands[args.command](args)
+
+    # All commands except init acquire a file lock so parallel agents
+    # (e.g. multiple Johns in Phase 5) don't corrupt the CSV.
+    # Read-only commands use a shared lock; write commands use exclusive.
+    if args.command == "init":
+        commands[args.command](args)
+    else:
+        shared = args.command in READ_ONLY_COMMANDS
+        with locked_db(args.workspace, shared=shared):
+            commands[args.command](args)
 
 
 if __name__ == "__main__":

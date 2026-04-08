@@ -27,7 +27,12 @@ Every specialist gets:
 
 Each saves output to:
 - `$WORKSPACE/seeds/<agent-name>.md` — human-readable seed list
-- Idea DB: `python scripts/idea_db.py add_batch <workspace> <agent>-seeds.json`
+- Idea DB:
+```bash
+python scripts/idea_db.py describe <workspace>
+python scripts/idea_db.py add_batch <workspace> <agent>-seeds.json
+# The output will print IDs: 1,2,3... — pass these to the orchestrator for downstream use
+```
 
 Each seed is: **one name + one sentence**. Tagged [SAFE/BOLD/WILD]. No elaboration.
 

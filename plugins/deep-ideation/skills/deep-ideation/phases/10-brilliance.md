@@ -33,6 +33,37 @@ This is a qualitative judgment pass, not another scoring round.
 
 ICE rewards the best ideas within the expected solution space. Brilliance finds the ideas that reframe the space.
 
+## Selecting Ideas to Evaluate
+
+```bash
+# Discover current schema
+python scripts/idea_db.py describe <workspace>
+
+# Evaluate all ideas that made it into the Idea Menu (scored ideas only)
+python scripts/idea_db.py top <workspace> ice_score --n 20
+# Focus on the top-scored ideas — typically 10-15 make it to this phase
+```
+
+Use the IDs from this output for all brilliance evaluations below.
+
+## Writing to the Idea Database
+
+```bash
+
+# Add brilliance columns
+python scripts/idea_db.py add_column <workspace> brilliance_tier --default ""
+python scripts/idea_db.py add_column <workspace> brilliance_pitch --default ""
+
+# Set tier and pitch for each evaluated idea using its existing ID
+python scripts/idea_db.py set <workspace> <id> brilliance_tier "brilliant"
+python scripts/idea_db.py set <workspace> <id> brilliance_pitch "One-sentence pitch here"
+# Valid tiers: "brilliant", "notable", "" (not evaluated)
+```
+
 ## Output Location
 
 Appended to `$WORKSPACE/08-synthesize.md` as the final section before CONVERGE. The Brilliant Ideas section should leave the user with the clearest, sharpest ideas from the session — right before they decide what to pursue.
+
+## Anti-Patterns
+- **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
+- **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.

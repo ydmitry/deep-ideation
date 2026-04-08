@@ -3,416 +3,200 @@ name: deep-ideation
 description: "Multi-agent parallel brainstorming at maximum creative depth. Specialists generate high-volume seed ideas; generalist Johns transform them through Disney spirals using an operations toolkit (SCAMPER, TRIZ Contradiction Engine, Six Hats, Reverse Brainstorming, Synectics). Use whenever the user wants to brainstorm with maximum depth, explore a problem from many angles simultaneously, generate a large volume of diverse ideas, or asks for 'deep ideation', 'multi-agent brainstorm', 'parallel brainstorming', 'swarm brainstorm'. Also use when the user says they want 'lots of ideas', 'explore every angle', or 'think about this from every perspective'."
 ---
 
-# Deep Ideation v7 — Seed, Transform & Converge
+# Deep Ideation v8 — Orchestrator Architecture
 
-Ideas are first-class citizens. The process has two core stages plus convergence:
-
-1. **SEED** — Specialist agents blast out raw idea seeds using their technique. Fast, high-volume, no filtering.
-2. **TRANSFORM** — Generalist agents (Johns) pick up batches of seeds and run Disney spirals, applying operations from a shared toolkit. Slower, deliberate, chain-building.
-3. **CONVERGE** — Synthesizer scores, Idea Menu (Quick Wins / Core Bets / Moonshots), Session Seed Bank export.
-
-Specialists are seed factories. Johns are idea refineries. Best of both worlds.
-
----
+You are a lightweight orchestrator. You do NOT read phase files or agent files yourself. You spawn a fresh subagent for each phase — each reads only its own instructions and produces output to the workspace.
 
 ## Complexity Modes
 
 Choose before starting. Ask the user if unclear.
 
-| Mode | When to Use | Phases Run | Agents | Johns | Expected Time |
-|------|------------|-----------|--------|-------|--------------|
-| **LITE** | Quick problem, 30-min session, low stakes | 1 → 3 → 8 → 9 → 10 | Digger + 2 specialists + Synthesizer + Brilliance | 2 (FIRE, ICE) | Fast |
-| **STANDARD** | Default. Most problems. | 1 → 10 (all phases, including 9.5) | Full roster + Stress Tester | 3-4 (FIRE, PLASMA, ICE + GHOST if >10 cold seeds) | Normal |
-| **DEEP** | High-stakes, complex, multi-stakeholder | 1 → 10 + Historian + 2nd iterative round | Full roster + Historian + Stress Tester + Round 2 | 4-5 (FIRE, PLASMA, ICE, GHOST, MIRROR) | Thorough |
+| Mode | When to Use | Phases Run | Specialists | Johns |
+|------|------------|-----------|-------------|-------|
+| **LITE** | Quick problem, 30-min session | 1 → 3 → 8 → 9 → 10 | Innovator + Wild Card | 2 (FIRE, ICE) |
+| **STANDARD** | Default. Most problems. | All phases including 9.5 | All 4 specialists | 3-4 (FIRE, PLASMA, ICE + GHOST if >10 cold) |
+| **DEEP** | High-stakes, complex | All phases + Historian + Round 2 | All 4 + Historian | 4-5 (FIRE, PLASMA, ICE, GHOST, MIRROR) |
 
-**LITE mode shortcuts:**
-- Skip ORCHESTRATE, DISTRIBUTE, BUILD, TENSION
-- Skip COLLISION MAP and RATCHET
-- Run only Innovator + Wild Card in SEED phase
-- Synthesizer outputs Idea Menu only (no proof searches)
+**LITE skips:** ORCHESTRATE, DISTRIBUTE, BUILD, TENSION, COLLISION MAP, RATCHET, HAT EVAL, STRESS-TEST.
+**DEEP adds:** Historian after DISCOVER, full Collision Map (all zones), Ratchet (3 cycles), Hat Eval, Round 2 option.
 
-**DEEP mode adds:**
-- Historian runs after DISCOVER (cross-session transfer)
-- Phase 5.5: Collision Map (all zones, max 3 hot)
-- Phase 5.7: Dialectical Ratchet (all hot zones, 3 cycles + full TRIZ principle application)
-- Phase 6.5: Hat Evaluation Pass (Six Hats on top 10 built ideas)
-- Round 2: Top 5 from Round 1 become new seeds for a focused second run
-- Web validation in Synthesizer (WebSearch)
-
-**STANDARD mode Collision Map + Ratchet behavior:**
-- Phase 5.5: Run Collision Map, cap at 2 hot zones
-- Phase 5.7: Run Ratchet on those hot zones, 2 cycles per zone
-
----
-
-## Workspace Isolation
-
-Every session gets its own timestamped directory to prevent cross-contamination:
+## Workspace Setup
 
 ```bash
-# Create session workspace
 WORKSPACE="results/$(date +%Y%m%d-%H%M%S)-$(echo "$PROBLEM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | head -c 30)"
 mkdir -p "$WORKSPACE/seeds"
 python scripts/idea_db.py init "$WORKSPACE"
 ```
 
-All agents read from and write to `$WORKSPACE`. The Historian reads from all previous workspace directories.
+## Mandatory Output Standards
 
----
+Every subagent prompt must include `references/output-rules.md` in its file list. This file contains:
+- Idea description rules (coffee-talk, 2-3 sentences, no jargon)
+- Required CSV columns (`description`, `pros`, `cons`, `requires`)
+- Idea Menu bucket definitions (Quick Wins / Core Bets / Moonshots)
 
-## The TRIZ Contradiction Engine
+## Phase Orchestration
 
-Built into the Innovator agent. Every Innovator run now produces a **Contradiction Card**:
+For each phase: spawn an Agent, pass it the files to read, the input from prior phases, and the problem statement. Collect the summary it returns. Pass file PATHS (not full content) between phases. Pass short summaries (2-5 sentences) for context.
 
-### 39 Engineering Parameters (adapted for product/business)
-```
-1. Weight/payload          11. Stress/load             21. Power/throughput
-2. Size/footprint          12. Shape/form               22. Energy loss
-3. Speed/velocity          13. Stability                23. Resource loss
-4. Force/effort            14. Strength/durability      24. Information loss
-5. Area/coverage           15. Reliability              25. Time loss
-6. Volume/capacity         16. Accuracy/precision       26. Quantity of content
-7. Complexity              17. Temperature/affect       27. Productivity
-8. Ease of use             18. Visibility               28. Manufacturability
-9. Adaptability            19. User engagement          29. Automation level
-10. Novelty                20. Defensibility            30. Cost
-```
+**Every subagent also receives** (in addition to the files listed per phase):
+- `references/output-rules.md` — mandatory idea description and CSV column rules
+- `references/idea-db.md` — CSV database API (for phases that write/read ideas: 3-10)
+- `$WORKSPACE` path — for all file reads/writes and `idea_db.py` commands
+- Problem statement (one sentence)
 
-### 40 Inventive Principles (full reference)
-```
-1. Segmentation            11. Beforehand cushioning    21. Rushing through
-2. Taking out              12. Equipotentiality         22. Convert harm to benefit
-3. Local quality           13. Inversion                23. Feedback
-4. Asymmetry               14. Curvature/spheroidality  24. Intermediary
-5. Merging                 15. Dynamization             25. Self-service
-6. Universality            16. Partial action           26. Copying
-7. Nesting                 17. Another dimension        27. Cheap short-life objects
-8. Anti-weight             18. Mechanical vibration     28. Mechanics substitution
-9. Preliminary anti-action 19. Periodic action          29. Pneumatics/hydraulics
-10. Prior action           20. Continuous useful action  30. Flexible shells
-31. Porous materials       36. Phase transitions
-32. Color/optical changes  37. Thermal expansion
-33. Homogeneity            38. Strong oxidants
-34. Discarding/recovering  39. Inert atmosphere
-35. Parameter changes      40. Composite materials
-```
+### Phase 1: DISCOVER (all modes, sequential)
 
-**Contradiction Card process (in Innovator):**
-1. Identify what you want to IMPROVE (improving parameter)
-2. Identify what WORSENS as a result (worsening parameter)
-3. Name the tension: "Improving [X] worsens [Y]"
-4. Select 3-5 relevant principles from the 40 above
-5. Apply each principle to generate a seed
+Spawn Agent:
+- Reads: `phases/01-discover.md` + `agents/digger.md`
+- Input: problem statement, user's preferred angles (if any)
+- If DEEP: spawn a second Agent reading `agents/historian.md` after Digger completes
+- Produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
+- After: present root causes + HMW to user for confirmation before proceeding
 
----
+### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 
-## Anchored ICE Scoring
+Spawn Agent:
+- Reads: `phases/02-orchestrate.md` + `$WORKSPACE/01-discover.md`
+- Input: discover summary (root causes, HMW questions, TRIZ trade-off)
+- Produces: problem type, specialist emphasis, IFR, ICE anchors, distribution plan → `$WORKSPACE/02-orchestrate.md` + `$WORKSPACE/ice-anchors.md`
 
-Before scoring, calibrate anchors for THIS session. The Synthesizer asks:
+### Phase 3: SEED (all modes, parallel)
 
-```
-Impact anchor:    "10 = fully resolves the deepest root cause Digger found"
-Confidence anchor: "10 = we have direct evidence (web research, prior session) this works"
-Ease anchor:      "10 = can be done today with existing resources in under an hour"
-```
+Spawn 2-4 Agents simultaneously:
+- Each reads: `phases/03-seed.md` + `agents/<specialist>.md`
+- LITE: Innovator + Wild Card (2 agents)
+- STANDARD/DEEP: Provocateur + Innovator + Wild Card + Connector (4 agents)
+- Input: problem brief, root causes, HMW questions, IFR, TRIZ trade-off
+- If DEEP: also pass `$WORKSPACE/01-historian.md` (historical seeds)
+- Each produces: 10-18 seeds → `$WORKSPACE/seeds/<agent-name>.md` + Idea DB (IDs returned)
 
-These anchors are recorded in the workspace and all ICE scores reference them.
+### Phase 4: DISTRIBUTE (skip in LITE, sequential)
 
-**Formula:** Score = (Impact × Confidence) / (11 - Ease)
+Spawn Agent:
+- Reads: `phases/04-distribute.md` + `$WORKSPACE/02-orchestrate.md` + `$WORKSPACE/ice-anchors.md`
+- Input: all seed file paths, mode, problem brief, root causes, HMW questions, IFR, TRIZ trade-off
+- Also pass: `references/operations.md` path (included in John packets)
+- Produces: triage results (Hot/Warm/Cold/Discard counts), John lineup, distribution plan → `$WORKSPACE/04-distribute.md`
 
----
+### Phase 5: TRANSFORM (all modes, parallel)
 
-## How to Write Idea Descriptions
+Spawn 2-5 John Agents simultaneously:
+- Each reads: `phases/05-transform.md` + `agents/john.md` + `references/operations.md` + `$WORKSPACE/ice-anchors.md`
+- Input per John: **assigned_to value** (e.g. "JohnA"), temperature zone, starting mode, second constraint (if any), TRIZ trade-off
+- Each John filters its seeds with: `idea_db.py filter <ws> assigned_to JohnA`
+- **LITE fallback:** LITE skips DISTRIBUTE, so `assigned_to` doesn't exist — Johns read all seeds via `filter <ws> phase seed`
+- LITE: 2 Johns (FIRE, ICE). STANDARD: 3-4. DEEP: 4-5 (MIRROR runs after others).
+- Each produces: 10-15 transformed ideas → `$WORKSPACE/05-john-[a-e].md` + Idea DB (IDs returned)
 
-Every idea description — in seeds, transforms, builds, AND the final CSV — must be written like explaining to a colleague over coffee.
+### Phase 5.5: COLLISION MAP (skip in LITE, sequential)
 
-**Rules:**
-- 2-3 sentences max
-- First sentence: what is it? (the mechanism, with a concrete example)
-- Second sentence: why does it matter? (the impact)
-- NO jargon, NO internal terminology, NO references to how the idea was generated
-- Self-contained: a reader with zero context should understand it
+Spawn Agent:
+- Reads: `phases/05.5-collision-map.md` + `agents/collision-map.md`
+- Input: all John output paths (`$WORKSPACE/05-john-*.md`), `$WORKSPACE/ice-anchors.md`, `$WORKSPACE/01-discover.md` (TRIZ card)
+- STANDARD: cap at 2 hot zones. DEEP: all zones (max 3).
+- Produces: HOT/WARM/COLD zone classification + routing plan → `$WORKSPACE/05.5-collision-map.md`
 
-**GOOD:** "Every deliverable on Upwork shows a label indicating what percentage was AI versus human effort. Clients see exactly what they're paying for, and freelancers who add more human judgment can charge premium rates."
+### Phase 5.7: RATCHET (skip in LITE, sequential)
 
-**BAD:** "AI composition transparency mechanism addressing trust erosion root cause via disclosure tier framework with dynamic fee incentivization."
+Spawn Agent:
+- Reads: `phases/05.7-ratchet.md` + `agents/dialectical-ratchet.md`
+- Input: `$WORKSPACE/05.5-collision-map.md` (hot zone details), `$WORKSPACE/01-discover.md` (TRIZ card), `$WORKSPACE/ice-anchors.md`
+- STANDARD: 2 cycles/zone. DEEP: 3 cycles + full TRIZ.
+- Produces: synthesis per hot zone → `$WORKSPACE/05.7-ratchet.md` + Idea DB (IDs returned)
 
-This rule applies to ALL agents and ALL phases.
+### Phase 6: BUILD (skip in LITE, sequential)
 
----
+Spawn Agent:
+- Reads: `phases/06-build.md` + `agents/brainwriter.md`
+- Input: all John output paths, `$WORKSPACE/05.7-ratchet.md` (ratchet syntheses)
+- Produces: 20-30 enhanced ideas + cross-zone combos + seed usage report → `$WORKSPACE/06-build.md` + Idea DB (IDs returned)
 
-## Required Idea Columns
+### Phase 6.5: HAT EVAL (skip in LITE, sequential)
 
-Every idea in the CSV must have these columns filled by the agent that creates it:
+Spawn Agent:
+- Reads: `phases/06.5-hat-eval.md` + `$WORKSPACE/06-build.md`
+- Input: top 10 ideas from build phase, `$WORKSPACE/ideas.csv`
+- Produces: six-hat analysis, invert candidates, combination suggestions, gut-check ranking, Green Hat seeds (if any) → `$WORKSPACE/06.5-hat-eval.md` + Idea DB (Green Hat seed IDs if any)
 
-| Column | What to Write | Example |
-|--------|--------------|---------|
-| `description` | 2-3 sentences, coffee-talk style | "Companies post tasks stripped of their name. A freelancer sees 'analyze Q3 revenue for a mid-size SaaS company' instead of 'analyze Stripe's Q3 numbers.'" |
-| `pros` | 2-3 concrete advantages | "Zero infrastructure cost. Addresses immediate post-layoff demand. Creates premium pricing tier." |
-| `cons` | 2-3 honest risks or downsides | "Hard to maintain anonymity for niche industries. Freelancers may resist not knowing who they work for." |
-| `requires` | What must exist first | "Anonymization engine. Legal review. 50+ enterprise pilots." |
+### Phase 7: TENSION (skip in LITE, sequential)
 
-These help the reader immediately assess each idea. Agents should fill them honestly — cons are as valuable as pros.
+Spawn Agent:
+- Reads: `phases/07-tension.md` + `agents/tension-analyzer.md`
+- Input: all John output paths, `$WORKSPACE/06-build.md`, `$WORKSPACE/06.5-hat-eval.md` (if run), `$WORKSPACE/05.5-collision-map.md` (warm zones), `$WORKSPACE/01-discover.md` (TRIZ card)
+- Produces: 3-5 tensions + bridges + PMI + deepest tension → `$WORKSPACE/07-tension.md` + Idea DB (bridge idea IDs)
 
----
+### Phase 8: SYNTHESIZE (all modes, sequential)
 
-## Idea Menu Output Format
+Spawn Agent:
+- Reads: `phases/08-synthesize.md` + `agents/synthesizer.md`
+- Input: ALL workspace file paths, `$WORKSPACE/ideas.csv`
+- LITE: Idea Menu only (no proof searches). STANDARD/DEEP: full output + web validation.
+- Produces: convergent signals, unique gems, hybrids, ICE scores, Idea Menu, proof searches, seed bank, roadmap → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
 
-The Synthesizer's final output uses three buckets:
+### Phase 9.5: STRESS-TEST (skip in LITE, sequential)
 
-### Quick Wins
-> High Ease (≥7) + decent Confidence (≥6). Low-hanging fruit. Do these first.
+Spawn Agent:
+- Reads: `phases/09.5-stress-test.md` + `agents/stress-tester.md`
+- Input: `$WORKSPACE/08-synthesize.md` (Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
+- STANDARD: top 5, 2 rounds. DEEP: top 8, 3 rounds.
+- Produces: confidence adjustments → `$WORKSPACE/09.5-stress-test.md` + updated ideas.csv
 
-### Core Bets
-> High Impact (≥8) + reasonable Confidence (≥5). The main strategic bets.
+### Phase 10: BRILLIANCE (all modes, sequential)
 
-### Moonshots
-> Very High Impact (≥9) + High Novelty (≥8) but lower Confidence (≤5). Worth validating with proof searches.
+Spawn Agent:
+- Reads: `phases/10-brilliance.md` + `agents/brilliance.md`
+- Input: `$WORKSPACE/08-synthesize.md` (Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
+- Produces: Brilliance Scorecard + tier classifications → appended to `$WORKSPACE/08-synthesize.md` + updated ideas.csv (brilliance_tier, brilliance_pitch)
 
----
+### Phase 9: CONVERGE (all modes, sequential — runs last)
 
-## Session Seed Bank
+Spawn Agent:
+- Reads: `phases/09-converge.md`
+- Input: `$WORKSPACE/08-synthesize.md` (complete Idea Menu + brilliance), `$WORKSPACE/09.5-stress-test.md` (if run), `$WORKSPACE/ideas.csv`, all workspace paths
+- Produces: filtered 2-3 best-fit ideas, proof search verdicts, user decision, Round 2 decision (DEEP) → `$WORKSPACE/09-converge.md` + updated ideas.csv (selected, proof_verdict, user_action)
 
-At session end, the Synthesizer exports a **Seed Bank** — a condensed list of the 10-15 most generative seeds from the session (not final ideas, but the raw seeds that produced the most chains). Saved to `$WORKSPACE/seed-bank.md`.
+## Parallel Splitting
 
-The Historian uses this in future sessions for cross-domain transfer.
+When a phase has many ideas to process (50+), the orchestrator can split work across parallel agents using `size` and `slice`:
 
-Format:
-```markdown
-# Seed Bank — [session name] — [date]
+```bash
+# 1. Check how many ideas need processing
+python scripts/idea_db.py size $WORKSPACE
+# → SIZE: 150, BY_PHASE: seed=44,transform=106
 
-| # | Seed | Source Agent | Chains Produced | Principle |
-|---|------|-------------|----------------|-----------|
-| 1 | [seed] | Provocateur | 3 ideas | [transferable mechanism] |
-```
+# 2. Split into N agents by ID range
+python scripts/idea_db.py slice $WORKSPACE --ids 1-50     # → Agent 1
+python scripts/idea_db.py slice $WORKSPACE --ids 51-100    # → Agent 2
+python scripts/idea_db.py slice $WORKSPACE --ids 101-150   # → Agent 3
 
----
-
-## Integrated Seed Triage
-
-After SEED phase (Phase 3), before DISTRIBUTE (Phase 4), do a quick triage. Not just dedup — classify:
-
-| Category | Criteria | Action |
-|----------|----------|--------|
-| **Hot** | Novel mechanism, surprising framing | Give to 2+ Johns |
-| **Warm** | Solid but conventional | Assign to best-fit John |
-| **Cold** | Interesting but low-energy | Keep, low priority |
-| **Discard** | Near-duplicate of another seed | Drop with note |
-
-Hot seeds = 15-20% of total. If you find fewer than 5 hot seeds, the problem brief may be too narrow.
-
----
-
-## Iterative Rounds (DEEP mode)
-
-After Phase 9 (CONVERGE), offer the user a second round:
-
-```
-AskUserQuestion:
-  question: "Round 1 produced [N] ideas. Top 5: [list]. Want a focused Round 2?"
-  header: "Go Deeper?"
-  options:
-    - "Yes — focus on [specific direction]"
-    - "Yes — explore a direction Round 1 missed"
-    - "No — I have enough to work with"
+# Or filter by phase first, then split
+python scripts/idea_db.py slice $WORKSPACE --phase transform --ids 45-90
 ```
 
-**Round 2 flow:**
-1. Top 3-5 from Round 1 become new seeds
-2. User-specified new direction becomes a new HMW question
-3. Run: Innovator + Connector (specialists only)
-4. One John (fresh mode, different from Round 1)
-5. Synthesizer produces merged output combining Round 1 + Round 2 ideas
+Pass the `--ids` range to each parallel agent. The agent uses `slice` to read only its batch, processes those ideas, and writes results back using the IDs from the slice output.
 
----
+**When to split:** Consider parallel agents when a single phase would process 50+ ideas (e.g., scoring 150 ideas in SYNTHESIZE, or running hat eval on many build outputs in DEEP mode).
+
+## Inter-Phase Data Rules
+
+1. **Pass file paths, not content.** Subagents read workspace files directly.
+2. **Pass short summaries** (2-5 sentences) between phases for context.
+3. **Problem statement** goes to every subagent.
+4. **Mandatory output standards** (above) go to every subagent.
+5. **`$WORKSPACE` path** goes to every subagent — they use it for all `idea_db.py` commands.
+6. **`references/idea-db.md`** path goes to every subagent that writes or reads ideas (Phases 3-10). The CSV is the shared state — agents read and write `$WORKSPACE/ideas.csv` via `python scripts/idea_db.py` commands documented in each phase/agent file.
+7. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
 
 ## The Idea Database
 
-Every idea is recorded as a row in `$WORKSPACE/ideas.csv`. See `references/idea-db.md`.
-
-**Key commands:**
+Every idea is tracked in `$WORKSPACE/ideas.csv`. See `references/idea-db.md` for commands. Key:
 ```bash
-python scripts/idea_db.py init <workspace>          # start session
-python scripts/idea_db.py add_batch <ws> seeds.json # bulk add seeds
-python scripts/idea_db.py add_column <ws> ice_score  # dynamic columns
-python scripts/idea_db.py top <ws> ice_score --n 5   # query top ideas
-python scripts/idea_db.py export_md <ws>             # markdown table
-python scripts/idea_db.py multi_filter <ws> --conditions "feasibility>=7,novelty>=8"
+python scripts/idea_db.py init <ws>                    # create empty DB
+python scripts/idea_db.py describe <ws>                # show current schema: columns, types, fill rates
+python scripts/idea_db.py add_batch <ws> seeds.json    # bulk add
+python scripts/idea_db.py top <ws> ice_score --n 5     # query top
+python scripts/idea_db.py export_md <ws>               # markdown export
 ```
 
----
-
-## The Agents
-
-### Seed Phase (parallel, fast)
-| Agent | Technique | Target |
-|-------|-----------|--------|
-| **Provocateur** | Reverse Brainstorming | 10-15 seeds |
-| **Innovator** | SCAMPER + TRIZ Contradiction Card | 12-18 seeds |
-| **Wild Card** | Crazy 8s + Random Entry + Personas | 12-18 seeds |
-| **Connector** | Full Synectics (4 analogy types) | 10-15 seeds |
-
-### Transform Phase (parallel, deliberate)
-
-Number of Johns scales with complexity mode and seed count. See Phase 4 (DISTRIBUTE) for exact count.
-
-| Agent | Temperature Zone | Starting Mode | When Used |
-|-------|-----------------|--------------|-----------|
-| **John A** | FIRE — push everything wilder | Dreamer-start | All modes |
-| **John B** | PLASMA — every idea needs a cross-domain mechanism | Realist-start | STANDARD + DEEP |
-| **John C** | ICE — every idea must pass feasibility check | Critic-start | All modes |
-| **John D** | GHOST — cold seed specialist; rescues dismissed ideas via SCAMPER Reverse + TRIZ Inversion | Cold-seed-start | STANDARD (if >10 cold seeds) + DEEP |
-| **John E** | CHAOS — no constraints, pure random riffing on mixed seeds | Any | Optional any mode |
-| **John F** | MIRROR — reads other Johns' outputs and argues the opposite | Disagreement-start | DEEP |
-
-Multiple Johns of the same type are allowed with different seed batches (e.g., 2 FIRE Johns each receiving half the hot seeds).
-
-Any John can optionally have a **second constraint axis** — chosen by the Orchestrator based on what dimension of diversity matters for this problem. Examples: budget ($0/$5K/$50K+), time horizon (this week/this quarter/2-year), team size, user segment, regulatory environment. Budget is just one option.
-
-### Collision + Synthesis Phase (sequential)
-| Agent | Role |
-|-------|------|
-| **Collision Map** | Groups ideas by sub-problem, measures divergence, classifies zones (HOT/WARM/COLD) |
-| **Dialectical Ratchet** | Runs thesis→antithesis→synthesis cycles on hot zones with constraint locking |
-| **Brainwriter** | Builds on top 10 Johns ideas + Ratchet pre-resolved syntheses; tracks hot/warm/cold seeds |
-| **Tension Analyzer** | Maps warm-zone contradictions; Bridge ops; PMI. Hot zones already resolved by Ratchet — focus on warm zones |
-| **Synthesizer** | Hybrids, Anchored ICE scores, Idea Menu, Proof Search Queries, Seed Bank |
-| **Stress Tester** | Adversarial red team: 2-3 attack rounds per idea; adjusts confidence scores; flags fatal flaws and surviving objections (STANDARD + DEEP only) |
-| **Brilliance Filter** | Evaluates top ideas against 7 brilliance questions; separates Brilliant (0-3) from Notable (2-4); writes pitch sentences; classifies durability |
-
-### Support Agents
-| Agent | When | Role |
-|-------|------|------|
-| **Historian** | DEEP mode, after DISCOVER | Cross-session knowledge transfer |
-
----
-
-## The Flow
-
-```
-DISCOVER → ORCHESTRATE → SEED → TRIAGE → DISTRIBUTE → TRANSFORM → COLLISION MAP → RATCHET → BUILD → [6.5 HAT EVAL] → TENSION → SYNTHESIZE → [9.5 STRESS-TEST] → BRILLIANCE → CONVERGE
-    ↓           ↓          ↓        ↓         ↓            ↓              ↓             ↓         ↓           ↓              ↓          ↓               ↓                  ↓           ↓
-  Digger     Blue Hat   4 specs  Hot/Warm/  Assign      3 Johns       Classify      Thesis→   Brain-    Six Hats on    Warm      Anchored        Confidence         Brilliant    Idea Menu
-  [+Hist.]   set plan   parallel  Cold/Drop  batches     spiral       Hot/Warm/    Antithesis  writer     Top 10 built  zones      ICE + Menu       Adjusted             Ideas    + Seed Bank
-                                                                        Cold         →Synth    [+Ratchet]                only
-```
-
-*(Phase 5.5 Collision Map and Phase 5.7 Ratchet: STANDARD and DEEP only)*
-*(Phase 6.5 Hat Eval only in STANDARD and DEEP modes)*
-*(Phase 9.5 Stress-Test only in STANDARD and DEEP modes)*
-
----
-
-## Phase-by-Phase
-
-### Phase 1: DISCOVER (non-negotiable)
-
-See `phases/01-discover.md`. Run Digger first.
-
-In DEEP mode: also run Historian after Digger.
-
-```
-AskUserQuestion:
-  question: "Root causes found: [summary]. HMW questions: [list]. Ready to launch?"
-  header: "Confirm"
-  options:
-    - "Yes, launch the swarm"
-    - "Let me adjust the angles"
-```
-
-### Phase 2: ORCHESTRATE
-
-See `phases/02-orchestrate.md`. Classify problem, set IFR, plan distribution.
-
-### Phase 3: SEED (parallel, fast)
-
-See `phases/03-seed.md`. Launch 4 specialists in parallel.
-
-### Phase 3.5: INTEGRATED SEED TRIAGE
-
-See `phases/04-distribute.md` (first half). Classify seeds: Hot / Warm / Cold / Discard.
-
-### Phase 4: DISTRIBUTE
-
-See `phases/04-distribute.md` (second half). Assign triage-classified seeds to Johns.
-
-### Phase 5: TRANSFORM (parallel, deliberate)
-
-See `phases/05-transform.md`. Launch N Johns (determined by Phase 4) with their temperature zone constraints. MIRROR zone Johns run slightly after others to read their Mode 1 output.
-
-### Phase 5.5: COLLISION MAP (STANDARD + DEEP only)
-
-See `phases/05.5-collision-map.md`. Build disagreement map from all Johns' outputs. Classify zones: HOT / WARM / COLD. Route hot zones to Ratchet, warm zones to Tension Analyzer, cold zones pass through.
-
-### Phase 5.7: DIALECTICAL RATCHET (STANDARD + DEEP only)
-
-See `phases/05.7-ratchet.md`. Run thesis→antithesis→synthesis cycles on each HOT zone. Lock constraints each cycle. STANDARD: 2 cycles per zone (max 2 zones). DEEP: 3 cycles per zone (all zones). Ratchet syntheses passed to Brainwriter as pre-resolved ideas.
-
-### Phase 6: BUILD
-
-See `phases/06-build.md`. Brainwriter reads all Johns, builds on top 10, tracks seed usage.
-
-### Phase 6.5: HAT EVALUATION PASS (STANDARD + DEEP only)
-
-See `phases/06.5-hat-eval.md`. Run Six Thinking Hats on top 10 built ideas before Tension.
-
-### Phase 7: TENSION (warm zones only)
-
-See `phases/07-tension.md`. Contradiction mapping, Bridge ops, PMI. **Hot zones already resolved by the Ratchet — Tension Analyzer focuses on warm zones only.**
-
-### Phase 8: SYNTHESIZE
-
-See `phases/08-synthesize.md`. Hybrids, Anchored ICE, Idea Menu, web validation, Seed Bank.
-
-### Phase 9.5: STRESS-TEST (STANDARD + DEEP only)
-
-See `phases/09.5-stress-test.md` and `agents/stress-tester.md`. Skipped in LITE mode.
-
-Runs adversarial attacks on the top ideas from the Idea Menu. In STANDARD: 2 rounds × top 5 ideas. In DEEP: 3 rounds × top 8 ideas. Each round targets a different fatal flaw category (market size, hidden assumption, dependency, timing, distribution, etc.). Adjusts each idea's confidence score and records the strongest surviving objection. Output saved to `$WORKSPACE/09.5-stress-test.md` and stress columns written to `ideas.csv`.
-
-### Phase 10: BRILLIANCE FILTER
-
-See `phases/10-brilliance.md` and `agents/brilliance.md`. Runs in ALL modes (LITE, STANDARD, DEEP) — it's cheap, just a judgment pass on finished work.
-
-Evaluates the Idea Menu through 7 brilliance questions that ICE scoring can't capture. Produces a Brilliance Scorecard, separates Brilliant (0-3) from Notable (2-4) ideas, and writes a one-sentence pitch for each. In STANDARD and DEEP, also cross-references `confidence_adjusted` from the Stress Tester — battle-tested brilliant ideas are the session's strongest output. Output appended to `$WORKSPACE/08-synthesize.md` as the final section the user reads.
-
-### Phase 11: CONVERGE
-
-See `phases/09-converge.md`. Decision tree, proof search review, decide, optional Round 2. Now informed by both the Stress Test confidence scores and the Brilliance Filter's output.
-
----
-
-## Why This Architecture Works
-
-1. **Volume + Quality**: Specialists give 40-60 seeds. Johns transform the best through 3 modes. You get both.
-2. **Structural divergence**: Temperature zones prevent Johns from converging even on identical seeds.
-3. **Traceability**: Every final idea has a full chain from seed to final form.
-4. **TRIZ gives real contradictions**: The Contradiction Card surfaces the actual tension rather than generic ideas.
-5. **Anchored ICE prevents score drift**: Scores calibrated to THIS session's root causes are meaningful.
-6. **Idea Menu is action-oriented**: Three buckets map directly to "what do I do first?"
-7. **Cross-session transfer**: Historian + Seed Bank means each session builds on all previous work.
-8. **Brilliance Filter catches what scoring misses**: ICE rewards feasible impact. Brilliance rewards structural insight — parsimony, surprise, inevitability. An idea that scores 6.0 on ICE but resolves the session's core contradiction in a single mechanism is more valuable than a 9.0 that's a well-executed known pattern.
-9. **Disagreement zones are the most valuable territory**: The Collision Map makes the skill spend its energy where agents disagreed most. Cold zones (consensus) are low novelty — hot zones (opposing mechanisms) are where the best ideas hide. The Ratchet turns the deepest disagreements into the strongest syntheses through dialectical pressure rather than assumption.
-10. **Stress-tested confidence is earned, not guessed**: Each `confidence_adjusted` score has a full trail — what was attacked, how the idea responded, what survived. An idea that held up under adversarial pressure is qualitatively different from one that was never tested. The strongest outputs are ideas that are both brilliant and battle-tested.
-11. **Variable Johns with cold seed injection means rejected ideas get a second chance**: The GHOST zone specifically transforms what everyone else dismissed — because the surprise is often in what nobody championed. Injecting cold seeds unlabeled into regular Johns' batches gives those ideas a second pass through every temperature zone without prejudice.
-12. **Proof search queries replace aspirational experiments.** Nobody runs 48-hour experiments. Everyone can run a web search in 10 minutes. The Synthesizer generates specific queries that find real-world evidence — existing competitors, pricing data, demand signals, and failure postmortems. If WebSearch is available, the skill runs the searches itself and includes real data in the output.
-
----
-
-## Anti-Patterns
-
-- **Don't skip DISCOVER** — the divergent 5 Whys + HMW is the single most valuable output
-- **Don't let Johns generate from scratch** — they transform SEEDS, not start fresh
-- **Don't give all Johns the same seeds** — temperature zones + different batches is what produces divergence
-- **Don't skip Seed Triage** — hot seeds are the signal; cold seeds might be hidden gems
-- **Don't skip the Collision Map** — cold zones tell you where the skill is being boring; hot zones tell you where the best ideas hide
-- **Don't compromise in the Ratchet** — if the synthesis is just "a bit of both," run another cycle. Compromise ≠ synthesis.
-- **Don't always use exactly 3 Johns** — scale up for complex problems (DEEP mode or 50+ seeds), scale down for simple ones (LITE mode); the right number is the one that matches the problem's complexity
-- **Don't run the Ratchet on warm zones** — they don't have enough tension to produce interesting syntheses; route them to Tension Analyzer instead
-- **Don't skip Tension Analysis** — the Groan Zone is where the most surprising ideas emerge (warm zones still need bridging)
-- **Don't trust unearned confidence scores** — if an idea wasn't stress-tested, its confidence is a guess. In STANDARD and DEEP modes, `confidence_adjusted` is the number to use, not the raw ICE confidence.
-- **Don't use strawman attacks in Stress Test** — the point is genuine pressure. An attack the idea can trivially deflect tells you nothing.
-- **Don't use generic ICE anchors** — calibrate to the session's specific root causes
-- **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
-- **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.
-- **Don't generate 48-hour experiments** — they sound actionable but nobody does them. Generate proof search queries instead. A 10-minute web search produces more validation than a hypothetical experiment design.
+**Every subagent should run `describe` first** to discover which columns exist from prior phases before reading or writing the CSV.

@@ -18,6 +18,32 @@ Each John gets:
 - ICE anchors: `$WORKSPACE/ice-anchors.md`
 - The TRIZ trade-off question (from Innovator)
 
+### Reading Your Seed Batch from CSV
+
+Each John reads ONLY its assigned seeds — not the full CSV:
+
+```bash
+# First, check the schema to see if assigned_to column exists
+python scripts/idea_db.py describe <workspace>
+
+# Check how many seeds total
+python scripts/idea_db.py size <workspace>
+
+# Read only YOUR assigned seeds (Phase 4 set assigned_to for each seed)
+python scripts/idea_db.py filter <workspace> assigned_to JohnA
+# Or for seeds assigned to multiple Johns:
+python scripts/idea_db.py filter <workspace> assigned_to JohnAB
+```
+
+**LITE mode fallback:** LITE skips Phase 4 (DISTRIBUTE), so the `assigned_to` column won't exist. If `describe` shows no `assigned_to` column, read ALL seeds instead:
+
+```bash
+# LITE mode: no assigned_to column — read all seeds
+python scripts/idea_db.py filter <workspace> phase seed
+```
+
+Use the IDs from this output as your source seeds. Every transformed idea must trace back to one of these seed IDs via the `source_seed` field.
+
 **Special launch order:** MIRROR zone Johns must launch AFTER other Johns have produced Mode 1 output, so they can read it first.
 
 ## Temperature Zone Recap (HARD CONSTRAINTS)
@@ -76,14 +102,36 @@ Output scales with John count. Per John: 10-15 ideas.
 
 Each John saves to:
 - `$WORKSPACE/05-john-[a/b/c/d/e].md` — full output with chains
-- Idea DB: `phase=transform, temperature_zone=[zone], second_constraint=[axis:value or none]`
+- Idea DB via commands below
+
+### Writing to the Idea Database
+
+```bash
+# First, discover current schema
+python scripts/idea_db.py describe <workspace>
+
+# Add columns for this phase (idempotent — safe if already exists)
+python scripts/idea_db.py add_column <workspace> temperature_zone
+python scripts/idea_db.py add_column <workspace> second_constraint --default "none"
+python scripts/idea_db.py add_column <workspace> triz_status --default ""
+
+# Add all transformed ideas as new rows
+# The output will print IDs: 15,16,17,... — use these for set calls below
+python scripts/idea_db.py add_batch <workspace> john-[a]-ideas.json
+# JSON format: [{"name":"...","description":"...","source_agent":"John A","source_seed":"3","chain":"SEED #3 → ...","tag":"BOLD","phase":"transform"}]
+
+# Set zone + constraint + triz_status on each added idea using returned IDs
+python scripts/idea_db.py set <workspace> <id> temperature_zone "FIRE"
+python scripts/idea_db.py set <workspace> <id> second_constraint "budget:$0"
+python scripts/idea_db.py set <workspace> <id> triz_status "resolves"
+```
 
 ## TRIZ Trade-Off Engagement
 
 Each John should explicitly answer the trade-off question from the Innovator:
 > "Does your best transformed idea RESOLVE the contradiction [X vs Y], PICK A SIDE, or SIDESTEP it?"
 
-Record in the DB: `triz_status = resolves / picks_side / sidesteps`
+Record in the DB using the `triz_status` column: `resolves` / `picks_side` / `sidesteps`
 
 ## While Running
 

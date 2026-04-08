@@ -67,11 +67,17 @@ In DEEP mode with Historian results: distribute Historian seeds to the John whos
 - Run all phases including Phase 6.5
 - Queue Round 2 decision after Phase 9
 
-## Output
+## Output Requirements
 
-Save orchestration plan to `$WORKSPACE/02-orchestrate.md`:
-- Problem type classification
-- Specialist emphasis
-- IFR statement
-- ICE anchor calibration (or reference to ice-anchors.md)
-- Seed distribution plan (which seeds go to which John)
+Save orchestration plan to `$WORKSPACE/02-orchestrate.md`. Return a short summary to the orchestrator containing:
+
+1. **Problem type** classification (Novel/Technical/Stuck/High-stakes/Ambiguous)
+2. **Specialist emphasis** (which agents get priority based on problem type)
+3. **IFR statement** ("Ideally, the problem solves itself — [perfect outcome]")
+4. **ICE anchor calibration** saved to `$WORKSPACE/ice-anchors.md`
+5. **Seed distribution plan** (which seeds go to which John, with temperature zones)
+
+See `references/output-rules.md` for mandatory idea description and CSV column rules.
+
+## Anti-Patterns
+- **Don't use generic ICE anchors** — calibrate to the session's specific root causes

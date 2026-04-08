@@ -39,12 +39,17 @@ You should find 5-15 hot seeds per session. If fewer than 5, the problem brief m
 
 ### Triage Process
 
-Add a triage column:
 ```bash
+# Discover current schema and see all seed IDs
+python scripts/idea_db.py describe <workspace>
+
+# Add a triage column
 python scripts/idea_db.py add_column <workspace> triage_category --default "warm"
-# Set hot/cold/discard for each non-warm seed
-python scripts/idea_db.py set <workspace> 7 triage_category hot
-python scripts/idea_db.py set <workspace> 23 triage_category discard
+
+# Set hot/cold/discard for each non-warm seed — use actual IDs from describe output
+python scripts/idea_db.py set <workspace> <id> triage_category hot
+python scripts/idea_db.py set <workspace> <id> triage_category cold
+python scripts/idea_db.py set <workspace> <id> triage_category discard
 ```
 
 ### Wild Card Cold Seeds
@@ -167,3 +172,17 @@ Every John receives:
 9. ICE anchor calibration (`$WORKSPACE/ice-anchors.md`)
 
 Save distribution plan to `$WORKSPACE/04-distribute.md`. Include: John count, zones assigned, budget constraints if any, seed counts per John.
+
+## Output Requirements
+
+Return a short summary to the orchestrator containing:
+1. **Triage results**: count of Hot / Warm / Cold / Discard seeds
+2. **John lineup**: count, temperature zones, second constraints (if any)
+3. **Distribution plan**: which seed batches go to which John
+4. **Cold seed injection plan**: which cold seeds injected into which Johns
+
+See `references/output-rules.md` for mandatory idea description and CSV column rules.
+
+## Anti-Patterns
+- **Don't skip Seed Triage** — hot seeds are the signal; cold seeds might be hidden gems
+- **Don't give all Johns the same seeds** — temperature zones + different batches is what produces divergence

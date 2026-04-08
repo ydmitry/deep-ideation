@@ -24,9 +24,17 @@ Save to `$WORKSPACE/06-build.md` + Idea DB (phase=build).
 ## Key Commands
 
 ```bash
+# Discover current schema
+python scripts/idea_db.py describe <workspace>
+
 # After Brainwriter completes seed usage report:
 python scripts/idea_db.py add_column <workspace> seed_usage --default "cold"
 python scripts/idea_db.py set_batch <workspace> seed-usage.json
+
+# Add enhanced ideas as new rows — use add_batch for new ideas
+# The output will print IDs: 60,61,62... — use these for set calls
+python scripts/idea_db.py add_batch <workspace> build-ideas.json
+# JSON format: [{"name":"...","description":"...","source_agent":"Brainwriter","source_seed":"12","chain":"John A #12 → COMBINE with John C #8 → ...","tag":"BOLD","phase":"build"}]
 
 # Stats to show user
 python scripts/idea_db.py stats <workspace>
