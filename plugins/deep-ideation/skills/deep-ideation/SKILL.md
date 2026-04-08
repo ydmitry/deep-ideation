@@ -39,21 +39,27 @@ Every subagent prompt must include `references/output-rules.md` in its file list
 
 For each phase: spawn an Agent, pass it the files to read, the input from prior phases, and the problem statement. Collect the summary it returns. Pass file PATHS (not full content) between phases. Pass short summaries (2-5 sentences) for context.
 
+**Every subagent also receives** (in addition to the files listed per phase):
+- `references/output-rules.md` — mandatory idea description and CSV column rules
+- `references/idea-db.md` — CSV database API (for phases that write/read ideas: 3-10)
+- `$WORKSPACE` path — for all file reads/writes and `idea_db.py` commands
+- Problem statement (one sentence)
+
 ### Phase 1: DISCOVER (all modes, sequential)
 
 Spawn Agent:
 - Reads: `phases/01-discover.md` + `agents/digger.md`
 - Input: problem statement, user's preferred angles (if any)
 - If DEEP: spawn a second Agent reading `agents/historian.md` after Digger completes
-- Produces: root causes, HMW questions, TRIZ trade-off → `$WORKSPACE/01-discover.md`
+- Produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
 - After: present root causes + HMW to user for confirmation before proceeding
 
 ### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 
 Spawn Agent:
-- Reads: `phases/02-orchestrate.md`
-- Input: discover summary, workspace path
-- Produces: problem type, IFR, ICE anchors, distribution plan → `$WORKSPACE/02-orchestrate.md` + `$WORKSPACE/ice-anchors.md`
+- Reads: `phases/02-orchestrate.md` + `$WORKSPACE/01-discover.md`
+- Input: discover summary (root causes, HMW questions, TRIZ trade-off)
+- Produces: problem type, specialist emphasis, IFR, ICE anchors, distribution plan → `$WORKSPACE/02-orchestrate.md` + `$WORKSPACE/ice-anchors.md`
 
 ### Phase 3: SEED (all modes, parallel)
 
@@ -62,28 +68,30 @@ Spawn 2-4 Agents simultaneously:
 - LITE: Innovator + Wild Card (2 agents)
 - STANDARD/DEEP: Provocateur + Innovator + Wild Card + Connector (4 agents)
 - Input: problem brief, root causes, HMW questions, IFR, TRIZ trade-off
-- Each produces: 10-18 seeds → `$WORKSPACE/seeds/<agent-name>.md` + Idea DB
+- If DEEP: also pass `$WORKSPACE/01-historian.md` (historical seeds)
+- Each produces: 10-18 seeds → `$WORKSPACE/seeds/<agent-name>.md` + Idea DB (IDs returned)
 
 ### Phase 4: DISTRIBUTE (skip in LITE, sequential)
 
 Spawn Agent:
-- Reads: `phases/04-distribute.md`
-- Input: all seed file paths, mode, orchestration plan
-- Produces: triage results, John assignments → `$WORKSPACE/04-distribute.md`
+- Reads: `phases/04-distribute.md` + `$WORKSPACE/02-orchestrate.md` + `$WORKSPACE/ice-anchors.md`
+- Input: all seed file paths, mode, problem brief, root causes, HMW questions, IFR, TRIZ trade-off
+- Also pass: `references/operations.md` path (included in John packets)
+- Produces: triage results (Hot/Warm/Cold/Discard counts), John lineup, distribution plan → `$WORKSPACE/04-distribute.md`
 
 ### Phase 5: TRANSFORM (all modes, parallel)
 
 Spawn 2-5 John Agents simultaneously:
-- Each reads: `phases/05-transform.md` + `agents/john.md`
-- Input per John: seed batch, temperature zone, starting mode, second constraint (if any), ICE anchors, TRIZ trade-off, `references/operations.md`
+- Each reads: `phases/05-transform.md` + `agents/john.md` + `references/operations.md` + `$WORKSPACE/ice-anchors.md`
+- Input per John: seed batch, temperature zone, starting mode, second constraint (if any), TRIZ trade-off
 - LITE: 2 Johns (FIRE, ICE). STANDARD: 3-4. DEEP: 4-5 (MIRROR runs after others).
-- Each produces: 10-15 transformed ideas → `$WORKSPACE/05-john-[a-e].md` + Idea DB
+- Each produces: 10-15 transformed ideas → `$WORKSPACE/05-john-[a-e].md` + Idea DB (IDs returned)
 
 ### Phase 5.5: COLLISION MAP (skip in LITE, sequential)
 
 Spawn Agent:
 - Reads: `phases/05.5-collision-map.md` + `agents/collision-map.md`
-- Input: all John output paths, ICE anchors, TRIZ card
+- Input: all John output paths (`$WORKSPACE/05-john-*.md`), `$WORKSPACE/ice-anchors.md`, `$WORKSPACE/01-discover.md` (TRIZ card)
 - STANDARD: cap at 2 hot zones. DEEP: all zones (max 3).
 - Produces: HOT/WARM/COLD zone classification + routing plan → `$WORKSPACE/05.5-collision-map.md`
 
@@ -91,30 +99,30 @@ Spawn Agent:
 
 Spawn Agent:
 - Reads: `phases/05.7-ratchet.md` + `agents/dialectical-ratchet.md`
-- Input: hot zone details from collision map, TRIZ card, ICE anchors
+- Input: `$WORKSPACE/05.5-collision-map.md` (hot zone details), `$WORKSPACE/01-discover.md` (TRIZ card), `$WORKSPACE/ice-anchors.md`
 - STANDARD: 2 cycles/zone. DEEP: 3 cycles + full TRIZ.
-- Produces: synthesis per hot zone → `$WORKSPACE/05.7-ratchet.md` + Idea DB
+- Produces: synthesis per hot zone → `$WORKSPACE/05.7-ratchet.md` + Idea DB (IDs returned)
 
 ### Phase 6: BUILD (skip in LITE, sequential)
 
 Spawn Agent:
 - Reads: `phases/06-build.md` + `agents/brainwriter.md`
-- Input: all John output paths, ratchet syntheses path, hat eval path (if run)
-- Produces: 20-30 enhanced ideas + cross-zone combos → `$WORKSPACE/06-build.md` + Idea DB
+- Input: all John output paths, `$WORKSPACE/05.7-ratchet.md` (ratchet syntheses)
+- Produces: 20-30 enhanced ideas + cross-zone combos + seed usage report → `$WORKSPACE/06-build.md` + Idea DB (IDs returned)
 
 ### Phase 6.5: HAT EVAL (skip in LITE, sequential)
 
 Spawn Agent:
-- Reads: `phases/06.5-hat-eval.md`
-- Input: top 10 ideas from build phase
-- Produces: six-hat analysis + invert candidates + combination suggestions → `$WORKSPACE/06.5-hat-eval.md`
+- Reads: `phases/06.5-hat-eval.md` + `$WORKSPACE/06-build.md`
+- Input: top 10 ideas from build phase, `$WORKSPACE/ideas.csv`
+- Produces: six-hat analysis, invert candidates, combination suggestions, gut-check ranking, Green Hat seeds (if any) → `$WORKSPACE/06.5-hat-eval.md` + Idea DB (Green Hat seed IDs if any)
 
 ### Phase 7: TENSION (skip in LITE, sequential)
 
 Spawn Agent:
 - Reads: `phases/07-tension.md` + `agents/tension-analyzer.md`
-- Input: John outputs, brainwriter ideas, hat eval (if run), collision map warm zones, TRIZ card
-- Produces: 3-5 tensions + bridges + PMI + deepest tension → `$WORKSPACE/07-tension.md` + Idea DB
+- Input: all John output paths, `$WORKSPACE/06-build.md`, `$WORKSPACE/06.5-hat-eval.md` (if run), `$WORKSPACE/05.5-collision-map.md` (warm zones), `$WORKSPACE/01-discover.md` (TRIZ card)
+- Produces: 3-5 tensions + bridges + PMI + deepest tension → `$WORKSPACE/07-tension.md` + Idea DB (bridge idea IDs)
 
 ### Phase 8: SYNTHESIZE (all modes, sequential)
 
@@ -122,13 +130,13 @@ Spawn Agent:
 - Reads: `phases/08-synthesize.md` + `agents/synthesizer.md`
 - Input: ALL workspace file paths, `$WORKSPACE/ideas.csv`
 - LITE: Idea Menu only (no proof searches). STANDARD/DEEP: full output + web validation.
-- Produces: Idea Menu + proof searches + seed bank → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md`
+- Produces: convergent signals, unique gems, hybrids, ICE scores, Idea Menu, proof searches, seed bank, roadmap → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
 
 ### Phase 9.5: STRESS-TEST (skip in LITE, sequential)
 
 Spawn Agent:
 - Reads: `phases/09.5-stress-test.md` + `agents/stress-tester.md`
-- Input: Idea Menu, ideas.csv, tension analysis, root causes
+- Input: `$WORKSPACE/08-synthesize.md` (Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
 - STANDARD: top 5, 2 rounds. DEEP: top 8, 3 rounds.
 - Produces: confidence adjustments → `$WORKSPACE/09.5-stress-test.md` + updated ideas.csv
 
@@ -136,16 +144,15 @@ Spawn Agent:
 
 Spawn Agent:
 - Reads: `phases/10-brilliance.md` + `agents/brilliance.md`
-- Input: Idea Menu, ideas.csv, tensions, stress results (if run), root causes
-- Produces: Brilliance Scorecard → appended to `$WORKSPACE/08-synthesize.md`
+- Input: `$WORKSPACE/08-synthesize.md` (Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
+- Produces: Brilliance Scorecard + tier classifications → appended to `$WORKSPACE/08-synthesize.md` + updated ideas.csv (brilliance_tier, brilliance_pitch)
 
 ### Phase 9: CONVERGE (all modes, sequential — runs last)
 
 Spawn Agent:
 - Reads: `phases/09-converge.md`
-- Input: complete Idea Menu + stress results + brilliance output, all workspace paths
-- Produces: filtered 2-3 best-fit ideas, proof search verdicts, user decision
-- In DEEP: offers Round 2 option
+- Input: `$WORKSPACE/08-synthesize.md` (complete Idea Menu + brilliance), `$WORKSPACE/09.5-stress-test.md` (if run), `$WORKSPACE/ideas.csv`, all workspace paths
+- Produces: filtered 2-3 best-fit ideas, proof search verdicts, user decision, Round 2 decision (DEEP) → `$WORKSPACE/09-converge.md` + updated ideas.csv (selected, proof_verdict, user_action)
 
 ## Inter-Phase Data Rules
 
