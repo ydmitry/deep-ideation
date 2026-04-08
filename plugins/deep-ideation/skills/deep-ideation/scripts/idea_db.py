@@ -24,17 +24,38 @@ Usage:
 
 import argparse
 import csv
+import fcntl
 import json
 import os
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 DB_FILENAME = "ideas.csv"
+LOCK_FILENAME = "ideas.csv.lock"
 BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase"]
 
 
 def get_db_path(workspace):
     return os.path.join(workspace, DB_FILENAME)
+
+
+def get_lock_path(workspace):
+    return os.path.join(workspace, LOCK_FILENAME)
+
+
+@contextmanager
+def locked_db(workspace):
+    """Acquire an exclusive file lock before reading/writing the CSV.
+    Parallel agents (e.g. multiple Johns) will block here until the lock is released."""
+    lock_path = get_lock_path(workspace)
+    lock_fd = open(lock_path, "w")
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        lock_fd.close()
 
 
 def read_db(workspace):
@@ -646,7 +667,14 @@ def main():
         "add_criteria": cmd_add_criteria, "compute": cmd_compute,
         "multi_filter": cmd_multi_filter, "describe": cmd_describe, "unscored": cmd_unscored,
     }
-    commands[args.command](args)
+
+    # All commands except init acquire an exclusive file lock so parallel
+    # agents (e.g. multiple Johns in Phase 5) don't corrupt the CSV.
+    if args.command == "init":
+        commands[args.command](args)
+    else:
+        with locked_db(args.workspace):
+            commands[args.command](args)
 
 
 if __name__ == "__main__":
