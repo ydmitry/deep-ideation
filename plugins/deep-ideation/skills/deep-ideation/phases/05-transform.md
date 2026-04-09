@@ -137,6 +137,15 @@ Record in the DB using the `triz_status` column: `resolves` / `picks_side` / `si
 
 Tell the user: "[N] Johns are transforming seeds in parallel using Disney spirals (zones: [list of zones]). Expected: [N×10]-[N×15] transformed ideas."
 
+## Description Discipline (Mandatory)
+
+When writing the `description` field for any idea:
+- Write a pitch, not a procedure
+- If you're writing "Step 1 / Step 2" or "Week 1 / Week 2" — you're in the wrong field
+- Put formulas, timelines, and mechanism details in `chain`
+- Re-read your description aloud: if it sounds like a spec doc, rewrite it
+- No jargon: TAM, CAC, OODA, TRIZ, ICE, and similar terms do not belong in `description`
+
 ## Anti-Patterns
 - Don't always launch exactly 3 Johns — scale with complexity mode and seed count
 - Don't let Johns generate from scratch — every idea must trace to a seed
