@@ -12,9 +12,16 @@ Every idea description — in seeds, transforms, builds, AND the final CSV — m
 - NO jargon, NO internal terminology, NO references to how the idea was generated
 - Self-contained: a reader with zero context should understand it
 
-**GOOD:** "Every deliverable on Upwork shows a label indicating what percentage was AI versus human effort. Clients see exactly what they're paying for, and freelancers who add more human judgment can charge premium rates."
+**BAD — procedural, timeline-heavy:**
+"Week 1: Run TAM/CAC/churn research on 5 niches. Week 2: Deploy parallel gates on top 2-3. Conviction Score = (Research × 0.4) + (Gate Signals × 0.6). Pick niche > 70%."
 
-**BAD:** "AI composition transparency mechanism addressing trust erosion root cause via disclosure tier framework with dynamic fee incentivization."
+**BAD — abstract jargon:**
+"AI composition transparency mechanism addressing trust erosion root cause via disclosure tier framework with dynamic fee incentivization."
+
+**GOOD — coffee-talk pitch:**
+"You stress-test candidate niches for two weeks before writing a line of code — research narrows the field, then quick experiments crown the winner. You only commit when you're 70% sure, not just hopeful."
+
+If you feel the urge to write "Week 1 / Week 2", a formula, or a step list in `description` — stop. Put that in the `chain` field instead.
 
 ## Required CSV Columns
 
@@ -26,6 +33,7 @@ Every idea in the CSV must have these columns filled by the agent that creates i
 | `pros` | 2-3 concrete advantages | "Zero infrastructure cost. Addresses immediate post-layoff demand. Creates premium pricing tier." |
 | `cons` | 2-3 honest risks or downsides | "Hard to maintain anonymity for niche industries. Freelancers may resist not knowing who they work for." |
 | `requires` | What must exist first | "Anonymization engine. Legal review. 50+ enterprise pilots." |
+| `chain` | Full operation lineage (steps, formulas, timelines) | "SEED #3 → COMBINE with #8 → TRIZ Inversion → ..." |
 
 These help the reader immediately assess each idea. Agents should fill them honestly — cons are as valuable as pros.
 
