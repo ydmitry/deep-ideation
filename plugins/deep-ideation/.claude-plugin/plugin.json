@@ -1,6 +1,6 @@
 {
   "name": "deep-ideation",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Multi-agent parallel brainstorming at maximum creative depth. Specialists generate seed ideas transformed through Disney spirals, SCAMPER, TRIZ, Six Hats, Synectics and more.",
   "author": {
     "name": "ydmitry"
