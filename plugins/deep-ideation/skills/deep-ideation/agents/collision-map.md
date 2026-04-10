@@ -17,8 +17,13 @@ For each group, score divergence (1-10):
 - 7-10: Fundamental contradiction — Johns propose opposite mechanisms (HOT)
 
 ### Step 3: Score Strategic Impact
-Use the session's ICE anchors. For each group, estimate the average impact
-if the sub-problem were fully resolved.
+For each group, judge how much resolving this sub-problem would move the
+session's root causes (from `$WORKSPACE/01-discover.md`). Score 1-10:
+- 1-3: cosmetic — most of the problem remains
+- 4-6: addresses one angle of a root cause
+- 7-10: resolves a root cause the Digger identified as deep
+
+This is a qualitative judgment, not a precision score. Be honest.
 
 ### Step 4: Classify Zones
 Plot divergence × impact. Assign zones:

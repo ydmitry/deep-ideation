@@ -31,8 +31,12 @@ These help the reader immediately assess each idea. Agents should fill them hone
 
 ## Idea Menu Buckets
 
-| Bucket | Criteria | Action |
-|--------|----------|--------|
-| **Quick Wins** | Ease ≥7, Confidence ≥6 | Do these first |
-| **Core Bets** | Impact ≥8, Confidence ≥5 | Main strategic plays |
-| **Moonshots** | Impact ≥9, Novelty ≥8 | Validate with proof searches first |
+The Scorer (Phase 8.5) assigns `menu_bucket` per idea based on qualitative judgment, not numeric thresholds. Most ideas get no bucket.
+
+| Bucket | Qualitative definition | Action |
+|--------|------------------------|--------|
+| **Quick Wins** | Can be started immediately with existing resources; low structural risk | Do these first |
+| **Core Bets** | Main strategic plays addressing the session's deepest root cause | Commit to these after stress-testing |
+| **Moonshots** | High-novelty, high-upside; requires proof search before commitment | Validate with proof searches first |
+
+Bucket values in the CSV: `quick_win`, `core_bet`, `moonshot`, or empty. A bucket is a recommendation — assign sparingly (3-5 per bucket maximum).

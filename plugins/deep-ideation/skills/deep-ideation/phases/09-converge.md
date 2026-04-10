@@ -122,7 +122,8 @@ Regardless of what the user decides, confirm:
 AskUserQuestion:
   question: "Your session is complete. Saved:
     - All ideas: $WORKSPACE/ideas.csv
-    - Idea Menu: $WORKSPACE/08-synthesize.md
+    - Synthesis (hybrids + criteria): $WORKSPACE/08-synthesize.md
+    - Ranked Idea Menu + Brilliance: $WORKSPACE/08.5-score.md
     - Seed Bank: $WORKSPACE/seed-bank.md (for future sessions)
 
     The Idea Menu has [N] Quick Wins, [N] Core Bets, [N] Moonshots.
@@ -137,9 +138,9 @@ AskUserQuestion:
 ## What Gets Saved
 
 - `$WORKSPACE/ideas.csv` — complete session artifact
-- `$WORKSPACE/08-synthesize.md` — full synthesis with Idea Menu
+- `$WORKSPACE/08-synthesize.md` — hybrids, convergent signals, criteria and weights
+- `$WORKSPACE/08.5-score.md` — ranked Idea Menu, bucket assignments, appended Brilliance output
 - `$WORKSPACE/seed-bank.md` — condensed seeds for Historian
-- `$WORKSPACE/ice-anchors.md` — scoring calibration for reference
 
 The Historian will scan these files in future sessions.
 

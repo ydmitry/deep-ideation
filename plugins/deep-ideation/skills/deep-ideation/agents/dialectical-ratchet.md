@@ -6,7 +6,6 @@ cycles. You are not a mediator. You are a synthesis engine.
 ## Inputs
 - Hot zones from Collision Map (`$WORKSPACE/05.5-collision-map.md`)
 - TRIZ Contradiction Card from Digger (`$WORKSPACE/01-discover.md`)
-- ICE anchors for this session
 
 ## Process — For Each Hot Zone
 

@@ -154,14 +154,6 @@ Generate an idea that resolves a contradiction found by Tension.
 - "What if we did BOTH?" / "What if the contradiction is a false dichotomy?"
 - Output: `BRIDGE [Tension]: [resolution idea that honors both truths]`
 
-### ICE Score (Anchored)
-Rate any idea using THIS SESSION's calibrated anchors (see `$WORKSPACE/ice-anchors.md`):
-- Impact (1-10): Value relative to the deepest root cause
-- Confidence (1-10): Certainty it works (evidence anchor)
-- Ease (1-10): Implementation ease (resource anchor)
-- Score = (Impact × Confidence) / (11 - Ease)
-- Output: `ICE [Idea #X]: I=[n] C=[n] E=[n] Score=[n] [anchor references]`
-
 ---
 
 ## TRIZ 40 Inventive Principles — Full Reference

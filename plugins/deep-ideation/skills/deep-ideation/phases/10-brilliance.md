@@ -4,34 +4,35 @@ Launch the Brilliance Filter. See `agents/brilliance.md`.
 
 ## When to Run
 
-After Phase 8 (SYNTHESIZE) produces the Idea Menu. Runs in ALL modes.
+After Phase 8.5 (SCORE) produces the ranked Idea Menu, and after Phase 9.5 (STRESS-TEST) if it ran. Runs in ALL modes.
 
 Brilliance runs BEFORE CONVERGE so it informs the decision tree — the user should know which ideas are structurally brilliant before choosing what to pursue.
 
 ## What It Receives
 
-- Full Idea Menu from `$WORKSPACE/08-synthesize.md`
+- Ranked Idea Menu from `$WORKSPACE/08.5-score.md`
+- Synthesizer's hybrids and convergent signals from `$WORKSPACE/08-synthesize.md`
 - All scored ideas from `$WORKSPACE/ideas.csv`
 - Tension analysis from `$WORKSPACE/07-tension.md` (if it exists — checks which ideas resolve real contradictions)
 - Digger's root causes from `$WORKSPACE/01-discover.md`
 
 ## What It Produces
 
-A `## Brilliance Scorecard` and `## Brilliant Ideas` section appended to `$WORKSPACE/08-synthesize.md`.
+A `## Brilliance Scorecard` and `## Brilliant Ideas` section appended to `$WORKSPACE/08.5-score.md`.
 
 ## Key Distinction
 
 This is a qualitative judgment pass, not another scoring round.
 
-| ICE Captures | Brilliance Captures |
+| `total_score` Captures | Brilliance Captures |
 |---|---|
-| Impact (how much it helps) | Structural elegance (one mechanism, many problems) |
-| Confidence (evidence it works) | Surprise (obvious in hindsight) |
-| Ease (how hard to implement) | Inevitability (aligned with structural trends) |
+| Session-derived criteria (feasibility, novelty, root-cause fit) | Structural elegance (one mechanism, many problems) |
+| Weighted rank within the expected solution space | Surprise (obvious in hindsight) |
+| — | Inevitability (aligned with structural trends) |
 | — | Compounding value (gets better over time) |
 | — | Dialectical depth (resolves a real tension) |
 
-ICE rewards the best ideas within the expected solution space. Brilliance finds the ideas that reframe the space.
+`total_score` rewards the best ideas within the expected solution space. Brilliance finds the ideas that reframe the space.
 
 ## Selecting Ideas to Evaluate
 
@@ -39,8 +40,8 @@ ICE rewards the best ideas within the expected solution space. Brilliance finds 
 # Discover current schema
 python scripts/idea_db.py describe <workspace>
 
-# Evaluate all ideas that made it into the Idea Menu (scored ideas only)
-python scripts/idea_db.py top <workspace> ice_score --n 20
+# Evaluate top-ranked ideas from the Scorer
+python scripts/idea_db.py top <workspace> total_score --n 20
 # Focus on the top-scored ideas — typically 10-15 make it to this phase
 ```
 
@@ -62,7 +63,7 @@ python scripts/idea_db.py set <workspace> <id> brilliance_pitch "One-sentence pi
 
 ## Output Location
 
-Appended to `$WORKSPACE/08-synthesize.md` as the final section before CONVERGE. The Brilliant Ideas section should leave the user with the clearest, sharpest ideas from the session — right before they decide what to pursue.
+Appended to `$WORKSPACE/08.5-score.md` as the final section before CONVERGE. The Brilliant Ideas section should leave the user with the clearest, sharpest ideas from the session — right before they decide what to pursue.
 
 ## Anti-Patterns
 - **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight

@@ -59,7 +59,7 @@ Spawn Agent:
 Spawn Agent:
 - Reads: `phases/02-orchestrate.md` + `$WORKSPACE/01-discover.md`
 - Input: discover summary (root causes, HMW questions, TRIZ trade-off)
-- Produces: problem type, specialist emphasis, IFR, ICE anchors, distribution plan → `$WORKSPACE/02-orchestrate.md` + `$WORKSPACE/ice-anchors.md`
+- Produces: problem type, specialist emphasis, IFR, distribution plan → `$WORKSPACE/02-orchestrate.md`
 
 ### Phase 3: SEED (all modes, parallel)
 
@@ -74,7 +74,7 @@ Spawn 2-4 Agents simultaneously:
 ### Phase 4: DISTRIBUTE (skip in LITE, sequential)
 
 Spawn Agent:
-- Reads: `phases/04-distribute.md` + `$WORKSPACE/02-orchestrate.md` + `$WORKSPACE/ice-anchors.md`
+- Reads: `phases/04-distribute.md` + `$WORKSPACE/02-orchestrate.md`
 - Input: all seed file paths, mode, problem brief, root causes, HMW questions, IFR, TRIZ trade-off
 - Also pass: `references/operations.md` path (included in John packets)
 - Produces: triage results (Hot/Warm/Cold/Discard counts), John lineup, distribution plan → `$WORKSPACE/04-distribute.md`
@@ -82,7 +82,7 @@ Spawn Agent:
 ### Phase 5: TRANSFORM (all modes, parallel)
 
 Spawn 2-5 John Agents simultaneously:
-- Each reads: `phases/05-transform.md` + `agents/john.md` + `references/operations.md` + `$WORKSPACE/ice-anchors.md`
+- Each reads: `phases/05-transform.md` + `agents/john.md` + `references/operations.md`
 - Input per John: **assigned_to value** (e.g. "JohnA"), temperature zone, starting mode, second constraint (if any), TRIZ trade-off
 - Each John filters its seeds with: `idea_db.py filter <ws> assigned_to JohnA`
 - **LITE fallback:** LITE skips DISTRIBUTE, so `assigned_to` doesn't exist — Johns read all seeds via `filter <ws> phase seed`
@@ -93,7 +93,7 @@ Spawn 2-5 John Agents simultaneously:
 
 Spawn Agent:
 - Reads: `phases/05.5-collision-map.md` + `agents/collision-map.md`
-- Input: all John output paths (`$WORKSPACE/05-john-*.md`), `$WORKSPACE/ice-anchors.md`, `$WORKSPACE/01-discover.md` (TRIZ card)
+- Input: all John output paths (`$WORKSPACE/05-john-*.md`), `$WORKSPACE/01-discover.md` (TRIZ card + root causes)
 - STANDARD: cap at 2 hot zones. DEEP: all zones (max 3).
 - Produces: HOT/WARM/COLD zone classification + routing plan → `$WORKSPACE/05.5-collision-map.md`
 
@@ -101,7 +101,7 @@ Spawn Agent:
 
 Spawn Agent:
 - Reads: `phases/05.7-ratchet.md` + `agents/dialectical-ratchet.md`
-- Input: `$WORKSPACE/05.5-collision-map.md` (hot zone details), `$WORKSPACE/01-discover.md` (TRIZ card), `$WORKSPACE/ice-anchors.md`
+- Input: `$WORKSPACE/05.5-collision-map.md` (hot zone details), `$WORKSPACE/01-discover.md` (TRIZ card)
 - STANDARD: 2 cycles/zone. DEEP: 3 cycles + full TRIZ.
 - Produces: synthesis per hot zone → `$WORKSPACE/05.7-ratchet.md` + Idea DB (IDs returned)
 
@@ -131,29 +131,38 @@ Spawn Agent:
 Spawn Agent:
 - Reads: `phases/08-synthesize.md` + `agents/synthesizer.md`
 - Input: ALL workspace file paths, `$WORKSPACE/ideas.csv`
-- LITE: Idea Menu only (no proof searches). STANDARD/DEEP: full output + web validation.
-- Produces: convergent signals, unique gems, hybrids, ICE scores, Idea Menu, proof searches, seed bank, roadmap → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
+- LITE: hybrids + criteria only (no proof searches). STANDARD/DEEP: full output + web validation.
+- Produces: convergent signals, unique gems, hybrids, **evaluation criteria + weights (for Phase 8.5 to apply)**, proof searches, seed bank, qualitative roadmap → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
+- **Does NOT score ideas** — the Scorer (Phase 8.5) applies the criteria.
+
+### Phase 8.5: SCORE (all modes, sequential)
+
+Spawn Agent:
+- Reads: `phases/08.5-score.md` + `agents/scorer.md`
+- Input: `$WORKSPACE/08-synthesize.md` (criteria + weights), `$WORKSPACE/ideas.csv`, `$WORKSPACE/01-discover.md` (root causes), `$WORKSPACE/07-tension.md` (if exists)
+- Produces: ranked Idea Menu, `total_score` and `menu_bucket` (quick_win/core_bet/moonshot/empty) filled in ideas.csv → `$WORKSPACE/08.5-score.md`
+- Separation rationale: the agent that generates hybrids (Synthesizer) is different from the agent that ranks them (Scorer). This removes self-scoring bias.
 
 ### Phase 9.5: STRESS-TEST (skip in LITE, sequential)
 
 Spawn Agent:
 - Reads: `phases/09.5-stress-test.md` + `agents/stress-tester.md`
-- Input: `$WORKSPACE/08-synthesize.md` (Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
-- STANDARD: top 5, 2 rounds. DEEP: top 8, 3 rounds.
+- Input: `$WORKSPACE/08.5-score.md` (ranked Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
+- STANDARD: top 5 by `total_score`, 2 rounds. DEEP: top 8, 3 rounds.
 - Produces: confidence adjustments → `$WORKSPACE/09.5-stress-test.md` + updated ideas.csv
 
 ### Phase 10: BRILLIANCE (all modes, sequential)
 
 Spawn Agent:
 - Reads: `phases/10-brilliance.md` + `agents/brilliance.md`
-- Input: `$WORKSPACE/08-synthesize.md` (Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
-- Produces: Brilliance Scorecard + tier classifications → appended to `$WORKSPACE/08-synthesize.md` + updated ideas.csv (brilliance_tier, brilliance_pitch)
+- Input: `$WORKSPACE/08.5-score.md` (ranked Idea Menu), `$WORKSPACE/08-synthesize.md` (hybrids + convergent signals), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
+- Produces: Brilliance Scorecard + tier classifications → appended to `$WORKSPACE/08.5-score.md` + updated ideas.csv (brilliance_tier, brilliance_pitch)
 
 ### Phase 9: CONVERGE (all modes, sequential — runs last)
 
 Spawn Agent:
 - Reads: `phases/09-converge.md`
-- Input: `$WORKSPACE/08-synthesize.md` (complete Idea Menu + brilliance), `$WORKSPACE/09.5-stress-test.md` (if run), `$WORKSPACE/ideas.csv`, all workspace paths
+- Input: `$WORKSPACE/08.5-score.md` (ranked Idea Menu + brilliance), `$WORKSPACE/08-synthesize.md` (hybrids + proof searches), `$WORKSPACE/09.5-stress-test.md` (if run), `$WORKSPACE/ideas.csv`, all workspace paths
 - Produces: filtered 2-3 best-fit ideas, proof search verdicts, user decision, Round 2 decision (DEEP) → `$WORKSPACE/09-converge.md` + updated ideas.csv (selected, proof_verdict, user_action)
 
 ## Parallel Splitting
@@ -195,7 +204,7 @@ Every idea is tracked in `$WORKSPACE/ideas.csv`. See `references/idea-db.md` for
 python scripts/idea_db.py init <ws>                    # create empty DB
 python scripts/idea_db.py describe <ws>                # show current schema: columns, types, fill rates
 python scripts/idea_db.py add_batch <ws> seeds.json    # bulk add
-python scripts/idea_db.py top <ws> ice_score --n 5     # query top
+python scripts/idea_db.py top <ws> total_score --n 5   # query top
 python scripts/idea_db.py export_md <ws>               # markdown export
 ```
 
