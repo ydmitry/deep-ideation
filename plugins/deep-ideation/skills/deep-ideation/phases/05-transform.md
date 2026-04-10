@@ -15,7 +15,6 @@ Each John gets:
 - Their temperature zone: `[ICE/FIRE/PLASMA/GHOST/CHAOS/MIRROR]`
 - Their second constraint (if assigned): `[axis: value]` — e.g., "budget: $0", "time: this week"
 - Operations toolkit: `references/operations.md`
-- ICE anchors: `$WORKSPACE/ice-anchors.md`
 - The TRIZ trade-off question (from Innovator)
 
 ### Reading Your Seed Batch from CSV

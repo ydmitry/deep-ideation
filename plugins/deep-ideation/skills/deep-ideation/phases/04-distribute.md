@@ -169,7 +169,6 @@ Every John receives:
 6. Operations toolkit reference (`references/operations.md`)
 7. Their temperature zone constraints
 8. Their second constraint (if assigned — axis name + value)
-9. ICE anchor calibration (`$WORKSPACE/ice-anchors.md`)
 
 Save distribution plan to `$WORKSPACE/04-distribute.md`. Include: John count, zones assigned, budget constraints if any, seed counts per John.
 

@@ -66,16 +66,14 @@ python scripts/idea_db.py set <workspace> 5 seed_usage hot
 ### Adding Evaluation Columns
 Any phase can add new columns for scoring or categorization:
 ```bash
-# Add Anchored ICE columns
-python scripts/idea_db.py add_column <workspace> impact
-python scripts/idea_db.py add_column <workspace> confidence
-python scripts/idea_db.py add_column <workspace> ease
-python scripts/idea_db.py add_column <workspace> ice_score
-
-# Add session-derived evaluation criteria
+# Add session-derived evaluation criteria (Synthesizer registers; Scorer fills)
 python scripts/idea_db.py add_criteria <workspace> \
   --criteria "feasibility,novelty,trust_building,scalability" \
   --composite "total_score"
+
+# Add the menu_bucket column (Scorer assigns qualitative labels)
+python scripts/idea_db.py add_column <workspace> menu_bucket --default ""
+# Valid values: quick_win / core_bet / moonshot / "" (no bucket)
 
 # Add validation columns (for web research)
 python scripts/idea_db.py add_column <workspace> validation --default "unvalidated"
@@ -98,53 +96,49 @@ python scripts/idea_db.py add_column <workspace> stress_modifications
 ### Setting Values
 ```bash
 # Set one value
-python scripts/idea_db.py set <workspace> 5 ice_score 18.0
+python scripts/idea_db.py set <workspace> 5 total_score 7.4
+python scripts/idea_db.py set <workspace> 5 menu_bucket "quick_win"
 
 # Batch update from JSON
 python scripts/idea_db.py set_batch <workspace> scores.json
 ```
 
-Batch JSON:
+Batch JSON (session criteria are the columns the Synthesizer defined):
 ```json
 [
-  {"id": 1, "impact": "9", "confidence": "7", "ease": "6", "ice_score": "12.6"},
-  {"id": 2, "impact": "8", "confidence": "8", "ease": "4", "ice_score": "9.1"}
+  {"id": 1, "feasibility": "7", "novelty": "4", "trust_building": "6"},
+  {"id": 2, "feasibility": "3", "novelty": "9", "trust_building": "8"}
 ]
 ```
 
 ### Querying
 ```bash
 # Sort by any column
-python scripts/idea_db.py sort <workspace> ice_score --desc
+python scripts/idea_db.py sort <workspace> total_score --desc
 
 # Filter by exact value
 python scripts/idea_db.py filter <workspace> tag WILD
 python scripts/idea_db.py filter <workspace> phase transform
 python scripts/idea_db.py filter <workspace> seed_usage hot
+python scripts/idea_db.py filter <workspace> menu_bucket quick_win
+python scripts/idea_db.py filter <workspace> menu_bucket core_bet
+python scripts/idea_db.py filter <workspace> menu_bucket moonshot
 
 # Filter above threshold (numeric)
-python scripts/idea_db.py filter_above <workspace> ice_score 15
+python scripts/idea_db.py filter_above <workspace> total_score 6
 
 # Top N by column
-python scripts/idea_db.py top <workspace> ice_score --n 5
-
-# Multi-condition filter (Idea Menu queries)
-python scripts/idea_db.py multi_filter <workspace> \
-  --conditions "ease>=7,confidence>=6"   # Quick Wins
-python scripts/idea_db.py multi_filter <workspace> \
-  --conditions "impact>=8,confidence>=5"  # Core Bets
-python scripts/idea_db.py multi_filter <workspace> \
-  --conditions "impact>=9,novelty>=8"     # Moonshots
+python scripts/idea_db.py top <workspace> total_score --n 5
 
 # Stats summary
 python scripts/idea_db.py stats <workspace>
 
 # Show all (or specific columns)
-python scripts/idea_db.py show <workspace> --columns "id,name,tag,ice_score,phase,seed_usage"
+python scripts/idea_db.py show <workspace> --columns "id,name,tag,total_score,menu_bucket,phase,seed_usage"
 
 # Export as markdown table (for output files)
 python scripts/idea_db.py export_md <workspace> \
-  --columns "id,name,source_agent,chain,tag,ice_score,total_score" \
+  --columns "id,name,source_agent,chain,tag,total_score,menu_bucket" \
   --sort total_score --desc
 ```
 
@@ -156,12 +150,6 @@ python scripts/idea_db.py compute <workspace> \
   --target "total_score" \
   --formula weighted_avg \
   --weights "feasibility:2,novelty:3,trust_building:4,scalability:2"
-
-# ICE formula
-python scripts/idea_db.py compute <workspace> \
-  --criteria "impact,confidence,ease" \
-  --target "ice_score" \
-  --formula ice
 ```
 
 ## When to Use in the Flow
@@ -175,17 +163,19 @@ python scripts/idea_db.py compute <workspace> \
 | **BUILD** | Brainwriter builds: phase=build, chain references parents, seed_usage updates |
 | **HAT EVAL** | Add hat evaluation columns per idea (white_note, red_note, black_note, etc.) |
 | **TENSION** | Resolution ideas: phase=tension, triz_status for top ideas |
-| **SYNTHESIZE** | Hybrids: phase=synthesis, full chains. ICE calibration. Add evaluation criteria. Score all. Add validation. |
-| **CONVERGE** | Add proof search columns (proof_queries, proof_findings, proof_verdict) |
+| **SYNTHESIZE** | Hybrids: phase=synthesis, full chains. Register evaluation criteria + composite column. Add validation. NO scoring here — the Scorer applies the criteria in Phase 8.5. |
+| **SCORE** (Phase 8.5) | Fill session criteria columns (e.g., feasibility, novelty, plus session-specific). Compute `total_score` via weighted_avg. Add `menu_bucket` and assign qualitative labels (quick_win / core_bet / moonshot / empty). |
 | **STRESS-TEST** | Add stress columns (confidence_raw, confidence_adjusted, stress_rounds, stress_attacks, stress_results, stress_strongest_objection, stress_modifications). `confidence_adjusted` is the authoritative battle-test confidence for each idea. |
+| **CONVERGE** | Add proof search columns (proof_queries, proof_findings, proof_verdict) |
 
 ## Session Artifacts
 
 At session end, the workspace contains:
 - `ideas.csv` — every idea from every phase with full metadata
 - `seed-bank.md` — top generative seeds for future Historian use
-- `ice-anchors.md` — calibration anchors for this session's scores
 - `seeds/<agent>.md` — raw seed outputs per specialist
+- `08-synthesize.md` — hybrids, convergent signals, criteria + weights
+- `08.5-score.md` — ranked Idea Menu, bucket assignments, appended Brilliance output
 
 The user can:
 - Open `ideas.csv` in Excel/Sheets for further analysis
