@@ -41,6 +41,15 @@ python scripts/idea_db.py stats <workspace>
 python scripts/idea_db.py filter <workspace> seed_usage hot
 ```
 
+## Description Discipline (Mandatory)
+
+When writing the `description` field for any idea:
+- Write a pitch, not a procedure
+- If you're writing "Step 1 / Step 2" or "Week 1 / Week 2" — you're in the wrong field
+- Put formulas, timelines, and mechanism details in `chain`
+- Re-read your description aloud: if it sounds like a spec doc, rewrite it
+- No jargon: TAM, CAC, OODA, TRIZ, ICE, and similar terms do not belong in `description`
+
 ## Tell the User
 
 "Brainwriter has finished building on the Johns' outputs:
