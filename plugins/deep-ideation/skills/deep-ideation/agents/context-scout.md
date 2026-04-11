@@ -8,53 +8,35 @@ Deep Ideation's failure mode is **coherent fiction**: without external anchors, 
 
 **A fact an agent can nod at is wallpaper. A fact an agent has to argue with is traction.**
 
-## Step 1: Classify the Problem
+## Step 1: Identify What Reality Looks Like for This Problem
 
-Pick ONE problem class from this typology. Use judgement; don't overthink it. If the problem genuinely straddles two classes, pick the dominant one.
+Read the problem statement and ask: *what kinds of real-world evidence would change how downstream agents think about this problem?*
 
-| Class | Signal |
-|---|---|
-| **commercial** | Business, product, go-to-market, revenue, pricing, strategy |
-| **technical** | Engineering, system design, performance, reliability, tooling |
-| **scientific** | Research, mechanism, discovery, data, replication |
-| **personal** | Career, life decision, habit, relationship, self-improvement |
-| **creative** | Art, writing, design, aesthetics, craft |
-| **health** | Medical, wellness, behavior change, physical or mental health |
-| **learning** | Pedagogy, teaching, skill acquisition, curriculum design |
-| **social** | Policy, community, organization, collective behavior |
+Pick **3–5 evidence types** that actually fit *this* problem. Don't run a generic template. Don't force a single frame. Reason from the problem.
 
-Write the class to the header of `00-context.md` as `problem_class`.
+Common evidence types — use as a starting palette, not a checklist:
 
-## Step 2: Pick Fact Categories for This Class
+- competitors, pricing, market moves, regulation
+- benchmarks, postmortems, existing tools, recent papers
+- replicated findings, datasets, active disputes
+- canonical exemplars, critical analyses, audience reception
+- clinical trials, guidelines, contraindications
+- pedagogical research, curricula with track records
+- labor/life data, transition stories, base rates
+- case studies, policy precedents, ethnographic findings
+- expert positions, published failures
 
-Each class has a menu of candidate fact categories. Pick the 3–5 that actually fit *this* problem — don't run the whole menu mechanically.
+A SaaS pricing question wants competitors and churn data. A database optimisation question wants benchmarks and postmortems. A novel's Act 2 wants canonical exemplars and critical analyses. A career decision wants labor data and transition stories. A teaching problem wants pedagogical research and curricula. A clinical question wants trial data and guidelines. These aren't classes to assign — they're shapes the evidence takes when you actually go looking.
 
-| Class | Fact categories |
-|---|---|
-| commercial | competitors, pricing, market size, regulation, recent moves, failure cases |
-| technical | benchmarks, existing tools/libs, known pitfalls, recent papers, failure reports, postmortems |
-| scientific | findings, datasets, replication status, adjacent disciplines, active disputes |
-| personal | labor/life data, transition stories, published experiences, expert guidance, base rates |
-| creative | canonical exemplars, critical analyses, reception data, historical precedents |
-| health | trial data, clinical guidelines, contraindications, product efficacy, epidemiology |
-| learning | pedagogical research, existing curricula, developmental evidence, track records |
-| social | case studies, precedents, ethnographic findings, policy results |
+## Step 2: Always Gather Falsification Facts
 
-## Step 3: Always Gather Falsification Facts
+On top of the evidence types you picked in Step 1, always ask: *has this been attempted? what happened?*
 
-**Regardless of class**, ask: *has this been attempted? what happened?*
+Falsification is the single highest-signal fact type because it's the one priors can't fake. Training data contains endless "here's how to solve X," but specific documented *failures* are rarer and harder to hallucinate. Allocate at least one search to falsification regardless of what kind of problem this is.
 
-Falsification is the single highest-signal fact type because it's the one priors can't fake. Training data contains endless "here's how to solve X," but specific documented *failures* are rarer and harder to hallucinate. Allocate at least one search to falsification — whether the problem is commercial, technical, personal, or creative.
+Phrasings to try: "who tried this and quit," "what postmortems exist," "which attempts failed and why," "what replications didn't work," "what critically-panned examples exist."
 
-The question changes by class:
-- commercial: "who tried this business model and died"
-- technical: "what postmortems exist for this architecture"
-- personal: "what made people who tried this quit"
-- creative: "what critically-panned works attempted this"
-- scientific: "what replications failed"
-- health/learning/social: "what interventions didn't work"
-
-## Step 4: Run Web Searches
+## Step 3: Run Web Searches
 
 3–5 targeted searches. Specific, scoped queries — not generic ones.
 
@@ -66,7 +48,7 @@ The question changes by class:
 
 If a search returns nothing useful, try one reformulation before moving on.
 
-## Step 5: Tag Each Fact
+## Step 4: Tag Each Fact
 
 For every fact you keep, tag it with epistemic metadata so downstream agents know how much weight to give it:
 
@@ -77,18 +59,17 @@ For every fact you keep, tag it with epistemic metadata so downstream agents kno
 
 A 2019 Gartner summary and a 2024 Reddit thread are both facts. Agents should argue with them differently.
 
-## Step 6: Write `00-context.md`
+## Step 5: Write `00-context.md`
 
 ```markdown
 # Context: [Problem slug]
 
-problem_class: [class]
 context_facts_count: N
 falsification_facts_count: M
 
 ## Facts
 
-1. **[Category]** — [Fact stated precisely, no vague language].
+1. **[Evidence type]** — [Fact stated precisely, no vague language].
    - Source: [URL] | type: [source_type] | directness: [primary/secondary] | date: [YYYY-MM-DD | undated] | confidence: [strong/moderate/weak/disputed]
 2. ...
 
@@ -99,7 +80,7 @@ falsification_facts_count: M
 
 ## Coverage Gaps
 
-- [Category]: no usable data found — agents should treat this dimension as unvalidated.
+- [Evidence type]: no usable data found — agents should treat this dimension as unvalidated.
 ```
 
 ## Floors
@@ -110,7 +91,6 @@ falsification_facts_count: M
 
 ```markdown
 # Context: [Problem slug]
-problem_class: [class]
 context_facts_count: 0
 falsification_facts_count: 0
 
