@@ -7,7 +7,7 @@ Built-in columns: id, name, description, source_agent, source_seed, chain, tag, 
 
 Usage:
     python idea_db.py init <workspace>                    # Create empty idea DB
-    python idea_db.py add <workspace> --name "..." --description "..." --source_agent "..." [--source_seed "..."] [--chain "..."] [--tag SAFE|BOLD|WILD] [--phase seed|transform|build|tension|synthesis]
+    python idea_db.py add <workspace> --name "..." --description "..." --source_agent "..." [--source_seed "..."] [--chain "..."] [--tag SAFE|BOLD|WILD] [--phase seed|transform|build|tension|synthesis] [--triz_card_id triz-1] [--zone_type hot|warm|cold|orthogonal] [--contrarian_carry yes]
     python idea_db.py add_batch <workspace> <json_file>   # Add multiple ideas from JSON
     python idea_db.py add_column <workspace> <column_name> [--default ""]  # Add a new evaluation column
     python idea_db.py set <workspace> <id> <column> <value>               # Set a value for an idea
@@ -37,7 +37,7 @@ from pathlib import Path
 
 DB_FILENAME = "ideas.csv"
 LOCK_FILENAME = "ideas.csv.lock"
-BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase"]
+BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase", "triz_card_id", "zone_type", "contrarian_carry"]
 
 
 def get_db_path(workspace):
@@ -117,6 +117,9 @@ def cmd_add(args):
     row["chain"] = args.chain or ""
     row["tag"] = args.tag or ""
     row["phase"] = args.phase or ""
+    row["triz_card_id"] = args.triz_card_id or ""
+    row["zone_type"] = args.zone_type or ""
+    row["contrarian_carry"] = args.contrarian_carry or ""
     rows.append(row)
     write_db(args.workspace, columns, rows)
     print(f"Added idea #{new_id}: {args.name}")
@@ -630,6 +633,9 @@ def main():
     p.add_argument("--chain", default="")
     p.add_argument("--tag", default="")
     p.add_argument("--phase", default="")
+    p.add_argument("--triz_card_id", default="")
+    p.add_argument("--zone_type", default="")
+    p.add_argument("--contrarian_carry", default="")
 
     # add_batch
     p = subparsers.add_parser("add_batch")

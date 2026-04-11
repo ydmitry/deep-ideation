@@ -82,14 +82,18 @@ For EACH root cause, write 1-2 "How Might We" questions:
 - End up with 4-6 HMW questions pointing in DIFFERENT directions
 - Diverse HMW questions = diverse ideas from all agents
 
-### 4. TRIZ Trade-Off Question (v7 addition)
+### 4. TRIZ Contradiction Cards (v7 addition)
 
-For the deepest root cause, identify the CORE CONTRADICTION:
+For the **2-3 deepest root causes**, identify a CORE CONTRADICTION each:
 - "What improves when we [address root cause]?"
 - "What WORSENS when we do that?"
 - State the trade-off: "Improving [X] worsens [Y]"
 
-This contradiction goes to the Innovator as the primary target for the TRIZ Contradiction Card.
+Produce 2-3 candidate cards:
+- **Primary card** (ID: triz-1) — the most structurally deep contradiction (clearest Improving X / Worsens Y pair)
+- **Alternate card(s)** (ID: triz-2, triz-3) — one or two additional contradictions from genuinely different root causes
+
+ORCHESTRATE will either pick one primary card or carry multiple into Phase 3. When multiple are carried, each Phase 3 specialist is scoped to a specific card, and the Collision Map surfaces conflicts per card family.
 
 ### 5. Depth-Layered Ideas
 
@@ -129,9 +133,12 @@ Running [N] chains from these angles:
 - **Are they genuinely independent?** [Yes/No]
 - **Could a solution address A but not B?** [If yes, they're truly different]
 
-### TRIZ Trade-Off (deepest root cause)
-- **Core contradiction:** Improving [X] worsens [Y]
-- This goes to Innovator for Contradiction Card analysis
+### TRIZ Contradiction Cards
+- **Primary (triz-1):** Improving [X] worsens [Y]
+- **Alternate (triz-2):** Improving [X] worsens [Y]
+- **Alternate (triz-3, optional):** Improving [X] worsens [Y]
+
+ORCHESTRATE picks one or carries multiple into Phase 3.
 
 ### HMW Questions (these go to ALL other agents)
 From Root Cause A:
@@ -169,7 +176,7 @@ Ideas that address 2+ of these simultaneously are the strongest candidates.
 - **DIVERGE, don't converge** — each chain must arrive at a genuinely different root cause
 - **Number of chains = number of angles the problem has**, not a fixed number
 - The HMW questions are your most important output — diverse HMW = diverse ideas
-- **Include the TRIZ Trade-Off** — state the core contradiction for the Innovator
+- **Produce 2-3 TRIZ Contradiction Cards** — primary + alternates from distinct root causes; ORCHESTRATE picks or carries multiple
 - If chains converge, rerun with explicit constraint to diverge
 - At least one angle should challenge the obvious framing
 - Aim for 3-5 ideas per angle across depth layers

@@ -19,7 +19,7 @@ Every specialist gets:
 1. Problem statement (one sentence)
 2. All root causes (from Digger)
 3. All HMW questions (from Digger)
-4. **TRIZ trade-off** (from Digger) — especially important for Innovator
+4. **TRIZ card assignment** (from ORCHESTRATE) — their specific assigned card if multiple are carried, otherwise the primary card (triz-1); especially important for Innovator
 5. IFR statement (from Orchestrate)
 6. Historical seeds (DEEP mode, from Historian)
 

@@ -26,6 +26,29 @@ AskUserQuestion:
 
 After responses, apply the filter and present the 2-3 best-fit ideas from the Idea Menu.
 
+## Contrarian Option (mandatory)
+
+Before presenting filtered results, identify the **Contrarian Option** from the Idea DB:
+- Find the idea with the **highest provocation score** among those with a **low composite score** (bottom 40% by `total_score`)
+- If no provocation score column exists, use the idea tagged `WILD` with the lowest `total_score`
+
+Present it alongside (not instead of) the filtered top ideas, clearly labeled:
+
+```
+**Contrarian Option:** [Idea Name]
+**Why it was filtered:** composite score [X] — below the threshold
+**Why it's here anyway:** highest provocation score among low-scoring ideas
+**Failure modes:** [1-3 explicit ways this could go wrong]
+**The bet it's making:** [one sentence — the structural assumption that would have to be true for this to work]
+```
+
+Mark it in the Idea DB:
+```bash
+python scripts/idea_db.py set <workspace> <id> contrarian_carry "yes"
+```
+
+This ensures the user always sees one radical alternative with eyes-open failure modes, even when filters would have silently dropped it.
+
 ## Part 2: Review Proof Search Findings
 
 Present the proof search results (or queries to run) from Phase 8 for the top 2-3 ideas:
@@ -93,6 +116,7 @@ Before saving, run `describe` to see available columns, then record the user's d
 python scripts/idea_db.py describe <workspace>
 
 # Add convergence columns
+# Note: triz_card_id, zone_type, contrarian_carry are built-in — already present from init
 python scripts/idea_db.py add_column <workspace> proof_verdict --default ""
 python scripts/idea_db.py add_column <workspace> selected --default "no"
 python scripts/idea_db.py add_column <workspace> user_action --default ""

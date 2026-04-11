@@ -20,6 +20,22 @@ Complete this sentence: "Ideally, the problem solves itself — [describe the pe
 
 The IFR is a directional anchor, not a deliverable. Johns use it to check whether their transformed ideas move toward or away from the ideal.
 
+## Step 2.5: Resolve TRIZ Cards
+
+The Digger produced 2-3 candidate TRIZ Contradiction Cards. Decide:
+
+**Option A — Pick one:** Choose the primary card (triz-1) as the single TRIZ focus for the entire run. All Phase 3 specialists target the same contradiction.
+
+**Option B — Carry multiple:** Keep 2-3 cards. Assign each Phase 3 specialist to a specific card:
+- Innovator → primary card (triz-1)
+- Provocateur → alternate card (triz-2)
+- Wild Card → alternate card (triz-2 or triz-3)
+- Connector → primary card (triz-1) or triz-2
+
+When carrying multiple cards, the Collision Map surfaces conflicts per card family, not just per sub-problem.
+
+Default to Option A for LITE and STANDARD modes. Option B is recommended for DEEP mode or when the alternate contradictions are clearly mechanistically distinct.
+
 ## Step 3: Plan Seed Distribution
 
 Decide how to split seeds across Johns:
@@ -51,6 +67,7 @@ Save orchestration plan to `$WORKSPACE/02-orchestrate.md`. Return a short summar
 1. **Problem type** classification (Novel/Technical/Stuck/High-stakes/Ambiguous)
 2. **Specialist emphasis** (which agents get priority based on problem type)
 3. **IFR statement** ("Ideally, the problem solves itself — [perfect outcome]")
-4. **Seed distribution plan** (which seeds go to which John, with temperature zones)
+4. **TRIZ card resolution** (Option A or B; if B, which card is assigned to which specialist)
+5. **Seed distribution plan** (which seeds go to which John, with temperature zones)
 
 See `references/output-rules.md` for mandatory idea description and CSV column rules.

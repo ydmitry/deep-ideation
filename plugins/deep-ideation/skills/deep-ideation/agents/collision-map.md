@@ -31,6 +31,24 @@ Plot divergence × impact. Assign zones:
 - WARM (divergence 4-6 OR impact 4-6): Route to Tension Analyzer
 - COLD (divergence ≤ 3): Pass through to Brainwriter
 
+After classifying, apply Step 4.5 to designate the ORTHOGONAL zone.
+
+### Step 4.5: Designate the Orthogonal Zone
+
+After classifying HOT / WARM / COLD, identify exactly one **ORTHOGONAL zone**: the highest-impact cluster that shares the **fewest mechanisms** with the HOT zones. It is the most valuable divergent thread the HOT analysis would otherwise discard.
+
+Selection criteria:
+- Impact ≥ 5 (worth developing further)
+- Mechanism family is clearly distinct from all HOT zones (different leverage point, different causal chain)
+- Must designate exactly one — even if everything seems related, pick the least-overlapping cluster
+
+Tag all ideas in this zone with `zone_type = orthogonal` in the Idea DB:
+```bash
+python scripts/idea_db.py set <workspace> <id> zone_type "orthogonal"
+```
+
+The ORTHOGONAL zone is routed to the Dialectical Ratchet alongside HOT zones (minimum 1 dedicated cycle).
+
 ### Step 5: For Each Hot Zone, Extract the Collision
 State the collision clearly:
 - "Side A says: [thesis — what John X/Y argue]"
@@ -41,11 +59,20 @@ State the collision clearly:
 ## Output Format
 Save to `$WORKSPACE/05.5-collision-map.md`
 
-| Zone | Sub-Problem | Divergence | Impact | Classification | Ideas Involved |
-|------|------------|-----------|--------|---------------|----------------|
-| 1 | [name] | 8 | 9 | HOT | John A #3, John C #7, John B #12 |
-| 2 | [name] | 5 | 6 | WARM | John B #4, John C #2 |
-| 3 | [name] | 2 | 4 | COLD | John A #1, John B #1, John C #1 |
+| Zone | Sub-Problem | Divergence | Impact | zone_type | Ideas Involved |
+|------|------------|-----------|--------|-----------|----------------|
+| 1 | [name] | 8 | 9 | hot | John A #3, John C #7, John B #12 |
+| 2 | [name] | 5 | 6 | warm | John B #4, John C #2 |
+| 3 | [name] | 2 | 4 | cold | John A #1, John B #1, John C #1 |
+| 4 | [name] | 5 | 7 | orthogonal | John A #5, John C #9 |
+
+Tag all ideas with their zone_type in the Idea DB:
+```bash
+python scripts/idea_db.py set <workspace> <id> zone_type "hot"
+python scripts/idea_db.py set <workspace> <id> zone_type "warm"
+python scripts/idea_db.py set <workspace> <id> zone_type "cold"
+python scripts/idea_db.py set <workspace> <id> zone_type "orthogonal"
+```
 
 ### Hot Zone Details
 [For each hot zone: Side A, Side B, core question, TRIZ connection]
@@ -58,3 +85,4 @@ Save to `$WORKSPACE/05.5-collision-map.md`
   same problem.
 - Don't skip cold zones in the output. Knowing where agents agree
   is useful signal — it shows what the skill considers obvious.
+- Don't skip the orthogonal zone. If every zone seems mechanistically related to the HOT zones, look harder — the orthogonal thread is there; you're just not separating causal families yet.

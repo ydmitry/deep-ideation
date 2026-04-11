@@ -38,7 +38,7 @@ The Digger:
 2. Runs one 5 Whys chain per confirmed angle (divergent — they MUST arrive at different root causes)
 3. Runs divergence check — reruns chains if they converged
 4. Writes 4-6 HMW questions (each pointing in a different direction)
-5. **Identifies the TRIZ trade-off** — the core contradiction for the Innovator
+5. **Identifies 2-3 TRIZ Contradiction Cards** — primary + alternates (one per distinct root cause worth exploring)
 6. Generates depth-layered ideas (surface/mid/root) per angle
 
 Output saved to `$WORKSPACE/01-discover.md`.
@@ -65,7 +65,9 @@ AskUserQuestion:
     - [Root Cause B in one sentence]
     - [Root Cause C in one sentence]
 
-    Core contradiction (for TRIZ): Improving [X] worsens [Y]
+    TRIZ Contradiction Cards:
+    - Primary (triz-1): Improving [X] worsens [Y]
+    - Alternate (triz-2): Improving [X] worsens [Y]
 
     HMW questions:
     1. [HMW 1]
@@ -87,7 +89,7 @@ Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator 
 
 1. **Root causes** (3-4, one sentence each — must arrive at different root causes per angle)
 2. **HMW questions** (4-6, each pointing in a different direction)
-3. **TRIZ trade-off** ("Improving X worsens Y")
+3. **TRIZ Contradiction Cards** (2-3 candidates: primary triz-1 + alternates; each "Improving X worsens Y")
 4. **Depth-layered ideas** (surface/mid/root per angle)
 5. **Complexity mode** selected by the user
 
@@ -101,7 +103,7 @@ After DISCOVER, every agent receives:
 - **Problem statement** (one sentence)
 - **Root Cause A, B, C** (one sentence each)
 - **HMW questions** (4-6, each pointing in a different direction)
-- **TRIZ trade-off** ("Improving X worsens Y")
+- **TRIZ Contradiction Cards** (primary + alternates; assigned card specified per specialist in ORCHESTRATE)
 - **IFR** (Ideal Final Result, set in ORCHESTRATE)
 - **Historical seeds** (if Historian ran — DEEP mode)
 

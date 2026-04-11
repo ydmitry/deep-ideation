@@ -61,7 +61,7 @@ Ideas with a fatal wound from stress testing (`confidence_adjusted <= 3`) can st
 3. Read the Tension analysis from `$WORKSPACE/07-tension.md` (if exists)
 4. Read the Digger's root causes from `$WORKSPACE/01-discover.md`
 5. Check `ideas.csv` for `confidence_adjusted` and `stress_results` (if stress testing ran)
-6. Evaluate the top 8-10 ideas (by `total_score`, plus any `menu_bucket` picks the Scorer flagged) against the 7 questions
+6. Evaluate the top 8-10 ideas (by `total_score`, plus any `menu_bucket` picks the Scorer flagged, plus any idea with `contrarian_carry = yes`) against the 7 questions
 7. Separate into Brilliant and Notable tiers
 8. Write pitch sentences for Brilliant ideas
 9. Classify durability
@@ -115,3 +115,4 @@ For each candidate evaluated:
 - **Don't explain the mechanism — explain the insight.** "This works because trust is a lagging indicator" is an insight. "This builds a trust layer" is a mechanism.
 - **Don't invent new ideas.** You curate from the Idea Menu — you don't generate.
 - **Don't skip the scorecard.** The 7 questions are the discipline. Without them, "brilliant" is just "I like this one."
+- **Don't skip contrarian-carry ideas.** An idea with `contrarian_carry = yes` must be evaluated regardless of its `total_score` — it may be structurally brilliant even if it scored poorly on conservative criteria.
