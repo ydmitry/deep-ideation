@@ -24,7 +24,7 @@ Usage:
     python idea_db.py slice <workspace> --ids 1-50          # Get ideas by ID range (for parallel splits)
     python idea_db.py slice <workspace> --offset 0 --limit 50  # Get ideas by offset+limit
     python idea_db.py slice <workspace> --phase build --ids 60-80  # Filter by phase, then slice
-    python idea_db.py compute_composite <workspace>                 # composite_score = total_score * stress_multiplier * brilliance_multiplier
+    python idea_db.py compute_composite <workspace>                 # composite_score = total_score * stress_multiplier * brilliance_multiplier * favorites_multiplier
     python idea_db.py compute_zscores <workspace> [--source composite_score] [--target z_score]  # Z-scores across cohort
     python idea_db.py validate_evidence_refs <workspace> <json_file>   # Validate evidence_ref fields cite valid IDs (blocks write on failure)
     python idea_db.py scorer_drop_log <workspace> <json_file>          # Write scorer_drop_log.md with excluded ideas + reason codes
@@ -593,22 +593,32 @@ def cmd_unscored(args):
         print(f"  #{row['id']} {row['name']} (phase: {row.get('phase', '?')}, agent: {row.get('source_agent', '?')})")
 
 
+FAVORITES_BOOST = 1.10  # Phase 5.8 Taste Check gives favorites +10% on the composite
+
+
 def cmd_mark_favorites(args):
     """Mark specific ideas as user favorites (Phase 5.8 Taste Check).
 
-    Ensures the user_favorites column exists, then sets user_favorites="true"
-    for each idea ID in the provided comma-separated list.
+    Ensures user_favorites and favorites_multiplier columns exist, then:
+    - sets user_favorites="true" for each idea ID in the provided list
+    - sets favorites_multiplier=FAVORITES_BOOST (1.10) for the same rows
+      so that Phase 8.5 compute_composite mechanically applies the +10%
+      bounded boost via the standard multiplier chain
 
     Usage:
         idea_db.py mark_favorites <workspace> --ids "1,3,7"
     """
     columns, rows = read_db(args.workspace)
 
-    # Ensure user_favorites column exists (idempotent)
+    # Ensure both columns exist (idempotent)
     if "user_favorites" not in columns:
         columns.append("user_favorites")
         for row in rows:
             row["user_favorites"] = ""
+    if "favorites_multiplier" not in columns:
+        columns.append("favorites_multiplier")
+        for row in rows:
+            row["favorites_multiplier"] = "1.0"
 
     ids_to_mark = {s.strip() for s in args.ids.split(",") if s.strip()}
     if not ids_to_mark:
@@ -622,20 +632,27 @@ def cmd_mark_favorites(args):
     for idea_id in ids_to_mark:
         if idea_id in id_map:
             id_map[idea_id]["user_favorites"] = "true"
+            id_map[idea_id]["favorites_multiplier"] = f"{FAVORITES_BOOST}"
             marked.append(idea_id)
         else:
             missing.append(idea_id)
 
     write_db(args.workspace, columns, rows)
-    print(f"Marked {len(marked)} ideas as favorites: {', '.join(f'#{i}' for i in sorted(marked, key=int))}")
+    sorted_marked = ', '.join(f'#{i}' for i in sorted(marked, key=int))
+    print(f"Marked {len(marked)} ideas as favorites (+{int((FAVORITES_BOOST - 1) * 100)}% composite boost): {sorted_marked}")
     if missing:
         print(f"Warning: IDs not found: {', '.join(missing)}", file=sys.stderr)
 
 
 def cmd_compute_composite(args):
-    """Compute composite_score = total_score * stress_multiplier * brilliance_multiplier.
+    """Compute composite_score = total_score * stress_multiplier * brilliance_multiplier * favorites_multiplier.
 
     Missing multiplier columns default to 1.0. Ensures composite_score column exists.
+
+    The favorites_multiplier is populated by Phase 5.8 (Taste Check) via the
+    mark_favorites command; it is 1.10 for user-picked ideas and 1.0 otherwise.
+    This gives favorites a bounded +10% boost without letting them override
+    strong non-favorites on the underlying criteria.
     """
     columns, rows = read_db(args.workspace)
 
@@ -664,12 +681,17 @@ def cmd_compute_composite(args):
         except (ValueError, TypeError):
             brilliance_mult = 1.0
 
-        row["composite_score"] = f"{total * stress_mult * brilliance_mult:.3f}"
+        try:
+            favorites_mult = float(row.get("favorites_multiplier", "").strip() or 1.0)
+        except (ValueError, TypeError):
+            favorites_mult = 1.0
+
+        row["composite_score"] = f"{total * stress_mult * brilliance_mult * favorites_mult:.3f}"
         computed += 1
 
     write_db(args.workspace, columns, rows)
     print(f"Computed composite_score for {computed}/{len(rows)} ideas")
-    print("Formula: total_score * stress_multiplier * brilliance_multiplier")
+    print("Formula: total_score * stress_multiplier * brilliance_multiplier * favorites_multiplier")
     print("(missing multipliers default to 1.0)")
 
 
@@ -975,7 +997,7 @@ def main():
 
     # compute_composite
     p = subparsers.add_parser("compute_composite",
-        help="Compute composite_score = total_score * stress_multiplier * brilliance_multiplier")
+        help="Compute composite_score = total_score * stress_multiplier * brilliance_multiplier * favorites_multiplier")
     p.add_argument("workspace")
 
     # compute_zscores

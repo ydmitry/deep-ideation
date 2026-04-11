@@ -80,6 +80,8 @@ If Context Scout fails entirely, write a one-line stub to `$WORKSPACE/00-context
 
 **Skip if:** `--no-checkpoints` flag is set. In LITE mode, include "Skip" as an option.
 
+`AskUserQuestion` accepts 2–4 discrete options plus auto-provided "Other" for free-text edits. Keep the options tight — common accept/reject — and route nuanced edits through "Other".
+
 ```
 AskUserQuestion:
   question: "Root causes found:
@@ -97,28 +99,29 @@ AskUserQuestion:
 
     [IF context_facts_count < 5:]
     Grounding: Context Scout found [N] cited facts (target was 5). The
-    session will proceed on thin grounding. If you'd like stronger
-    grounding, refine the problem statement to name a specific market,
-    domain, or benchmark the scout can search for, and we'll rerun it.
+    session will proceed on thin grounding. Consider refining the
+    problem statement (via 'Other') to name a specific market, domain,
+    or benchmark the scout can search for, and we'll rerun it.
 
-    Confirm the framing to launch the swarm."
+    Confirm to launch the swarm, or use 'Other' to edit the framing."
   header: "Confirm Framing"
+  multiSelect: false
   options:
     - "Yes, launch the swarm"
-    - "Adjust the root causes"
-    - "Change the TRIZ contradiction"
-    - "Reframe the problem entirely"
-    - "Refine the problem and rerun the scout"   ← only if thin grounding
-    - "Skip — use this framing as-is"             ← LITE mode only
+    - "I want to edit the framing"   # routes user to 'Other' for free-text edits
 ```
 
-**If user selects "Adjust root causes" or "Change TRIZ contradiction":** Update `$WORKSPACE/01-discover.md` with the corrections, then continue to Phase 2.
+Parse the response:
+- "Yes, launch the swarm" → proceed to Phase 2.
+- "Other" / "edit the framing" text → classify the edit:
+  - Root cause or HMW rewording → update `$WORKSPACE/01-discover.md`, then proceed.
+  - TRIZ contradiction change → update `$WORKSPACE/01-discover.md`, then proceed.
+  - New problem statement → re-run Phase 1 (Scout + Digger) with the new statement.
+  - Refined problem for better grounding → re-run Context Scout only, update `$WORKSPACE/00-context.md`, then re-present the Framing Gate.
 
-**If user selects "Reframe the problem entirely":** Re-run Phase 1 (Scout + Digger) with the new problem statement before continuing.
+**LITE mode override:** When mode is LITE, treat any "Other" response as Skip and proceed without re-running anything. Log skip reason.
 
-**If user selects "Refine and rerun the scout":** Re-run Context Scout only with the refined problem statement, update `$WORKSPACE/00-context.md`, then re-present the Framing Gate.
-
-Log checkpoint result to workspace: `Framing Gate: confirmed / adjusted / reframed / rescouted / skipped`.
+Log checkpoint result to workspace: `Framing Gate: confirmed / edited / reframed / rescouted / skipped`.
 
 ### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 
@@ -221,6 +224,8 @@ Spawn Agent:
 
 **Skip if:** `--no-checkpoints` is set, OR mode is LITE (proceed straight to Phase 8b using criteria as-is).
 
+`AskUserQuestion` is limited to 2–4 discrete options plus an auto-provided "Other" for free-text input. Use discrete options for the common defaults; rely on "Other" for custom weight/criterion edits.
+
 ```
 AskUserQuestion:
   question: "Proposed evaluation criteria:
@@ -229,16 +234,17 @@ AskUserQuestion:
     ...
     Total: 100%
 
-    Accept, adjust weights, drop a criterion, or add one."
+    Accept these as-is, or use 'Other' to describe changes
+    (e.g. 'drop novelty', 'feasibility:30,novelty:20,impact:50',
+    'add security with weight 15')."
   header: "Evaluation Criteria"
+  multiSelect: false
   options:
     - "Accept — use these criteria as-is"
-    - "Adjust weights (type new weights, e.g. feasibility:30,novelty:20,...)"
-    - "Drop a criterion (type which one)"
-    - "Add a criterion (type name and description)"
+    - "I want to adjust them"   # routes user to 'Other' free-text input
 ```
 
-After user responds: normalize weights to 100%, write confirmed criteria back to `$WORKSPACE/criteria.json`. Then register criteria columns:
+If the user picks "Accept", use `criteria.json` as-is. If the user picks "adjust" or types changes via "Other", parse the free-text edit, normalize weights to 100%, and write the confirmed criteria back to `$WORKSPACE/criteria.json`. Then register criteria columns:
 
 ```bash
 python scripts/idea_db.py add_criteria <workspace> \
@@ -254,15 +260,16 @@ Spawn Agent:
 - Reads: `phases/08b-hybridize.md` + `agents/synthesizer.md`
 - Input: ALL workspace file paths, `$WORKSPACE/ideas.csv`, **`$WORKSPACE/criteria.json`** (confirmed criteria), `$WORKSPACE/05.8-taste-check.md` (if exists)
 - LITE: hybrids + seed bank only (no proof searches). STANDARD/DEEP: full output + web validation.
-- Produces: convergent signals, unique gems, hybrids (boosting user favorites by +10%), proof searches, seed bank → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
+- Produces: convergent signals, unique gems, hybrids, proof searches, seed bank → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
 - **Does NOT score ideas** — the Scorer (Phase 8.5) applies the criteria.
+- **Note on favorites:** Phase 8b does NOT manually boost favorites. The +10% boost is applied mechanically by Phase 8.5's `compute_composite` via the `favorites_multiplier` column (set by Phase 5.8 `mark_favorites`). Phase 8b may *reference* favorites when selecting cross-zone clusters, but the quantitative boost is enforced in the scoring pipeline, not in prompt instructions.
 
 ### Phase 8.5: SCORE (all modes, sequential)
 
 Spawn Agent:
 - Reads: `phases/08.5-score.md` + `agents/scorer.md`
-- Input: `$WORKSPACE/criteria.json` (confirmed criteria + weights), `$WORKSPACE/08-synthesize.md`, `$WORKSPACE/ideas.csv`, `$WORKSPACE/01-discover.md` (root causes), `$WORKSPACE/07-tension.md` (if exists)
-- Produces: ranked Idea Menu, `total_score` and `menu_bucket` (quick_win/core_bet/moonshot/empty) filled in ideas.csv → `$WORKSPACE/08.5-score.md`
+- Input: `$WORKSPACE/criteria.json` (confirmed criteria + weights), `$WORKSPACE/08-synthesize.md`, `$WORKSPACE/ideas.csv`, `$WORKSPACE/01-discover.md` (root causes), `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/05.8-taste-check.md` (if exists)
+- Produces: ranked Idea Menu, `total_score`, `composite_score` (= `total_score * stress_multiplier * brilliance_multiplier * favorites_multiplier`), `z_score`, `menu_bucket` filled in ideas.csv → `$WORKSPACE/08.5-score.md`
 - Separation rationale: the agent that generates hybrids (Synthesizer) is different from the agent that ranks them (Scorer). This removes self-scoring bias.
 
 ### Phase 9.5: STRESS-TEST (skip in LITE, sequential)

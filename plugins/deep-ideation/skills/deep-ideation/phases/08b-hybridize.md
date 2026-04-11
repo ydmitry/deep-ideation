@@ -18,16 +18,17 @@ All previous phase outputs, plus confirmed criteria:
 
 ## Handling User Favorites
 
-If `$WORKSPACE/05.8-taste-check.md` exists and lists user favorites:
+If `$WORKSPACE/05.8-taste-check.md` exists, user favorites are already recorded in `ideas.csv` (`user_favorites=true` and `favorites_multiplier=1.10`). You can read them for context:
 
 ```bash
-# Read favorites
 python scripts/idea_db.py filter <workspace> user_favorites true
 ```
 
-When identifying convergent signals and ranking hybrids, apply a **+10% weight boost** to favorites. This is bounded — a favorite that scores poorly on the confirmed criteria can still rank below a non-favorite that scores well.
+**Do NOT manually apply a boost here.** The +10% bounded boost is applied mechanically by Phase 8.5's `compute_composite` command (via the `favorites_multiplier` column set by Phase 5.8). The scoring pipeline owns the boost so it's auditable and reproducible, not a prompt-level wish.
 
-Do not filter out non-favorites. The boost is additive, not a gate.
+Your job in this phase is hybrid generation, not scoring. If the user favorited a theme, you may prefer cross-zone clusters that reference it when picking which hybrids to expand — but the quantitative lift on the final ranking comes from the scoring pipeline, not from you.
+
+Do not filter out non-favorites.
 
 ## What It Produces
 
@@ -63,7 +64,16 @@ python scripts/idea_db.py add_batch <workspace> hybrid-ideas.json
 
 ## Expected Output
 
-Save to `$WORKSPACE/08-synthesize.md` (keeping the same output filename for compatibility with downstream phases that reference it). Include the hybrid list, convergent signals, proof-search material, and seed bank summary. The authoritative ranking is produced by Phase 8.5 (SCORE).
+Save to `$WORKSPACE/08-synthesize.md` (keeping the same output filename for compatibility with downstream phases that reference it). Include:
+
+1. **Confirmed Criteria section** — echo the criteria + weights from `$WORKSPACE/criteria.json` verbatim at the top, under the heading `## Evaluation Criteria (confirmed)`. This is a legacy fallback so the Scorer agent (`agents/scorer.md`) can still find criteria by section header on older workspaces; the authoritative source remains `criteria.json`.
+2. Hybrid list
+3. Convergent signals
+4. Unique gems
+5. Proof-search material
+6. Seed bank summary
+
+The authoritative ranking is produced by Phase 8.5 (SCORE).
 
 ## Anti-Patterns
 
