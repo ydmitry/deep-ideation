@@ -238,7 +238,7 @@ Spawn Agent:
 - Reads: `phases/08b-hybridize.md` + `agents/synthesizer.md`
 - Input: ALL workspace file paths, `$WORKSPACE/ideas.csv`, **`$WORKSPACE/criteria.json`** (confirmed criteria), `$WORKSPACE/05.8-taste-check.md` (if exists)
 - LITE: hybrids + seed bank only (no proof searches). STANDARD/DEEP: full output + web validation.
-- Produces: convergent signals, unique gems, hybrids (boosting user favorites by +10%), proof searches, seed bank, qualitative roadmap → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
+- Produces: convergent signals, unique gems, hybrids (boosting user favorites by +10%), proof searches, seed bank → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
 - **Does NOT score ideas** — the Scorer (Phase 8.5) applies the criteria.
 
 ### Phase 8.5: SCORE (all modes, sequential)

@@ -37,7 +37,6 @@ Do not filter out non-favorites. The boost is additive, not a gate.
 4. **Web validation** (STANDARD + DEEP) — real-world evidence for 2-3 gut-pick top candidates
 5. **Proof search queries** — 3-5 per gut-pick top idea with interpretation guide (+ findings if WebSearch available)
 6. **Session Seed Bank** — top 10-15 generative seeds for future Historian use
-7. **Phased roadmap** — qualitative ordering (no time estimates)
 
 ## Session Seed Bank Export
 
@@ -64,7 +63,7 @@ python scripts/idea_db.py add_batch <workspace> hybrid-ideas.json
 
 ## Expected Output
 
-Save to `$WORKSPACE/08-synthesize.md` (keeping the same output filename for compatibility with downstream phases that reference it). Include the hybrid list, convergent signals, proof-search material, seed bank summary, and roadmap. The authoritative ranking is produced by Phase 8.5 (SCORE).
+Save to `$WORKSPACE/08-synthesize.md` (keeping the same output filename for compatibility with downstream phases that reference it). Include the hybrid list, convergent signals, proof-search material, and seed bank summary. The authoritative ranking is produced by Phase 8.5 (SCORE).
 
 ## Anti-Patterns
 
