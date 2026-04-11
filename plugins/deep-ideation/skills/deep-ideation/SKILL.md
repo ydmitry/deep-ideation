@@ -47,12 +47,19 @@ For each phase: spawn an Agent, pass it the files to read, the input from prior 
 
 ### Phase 1: DISCOVER (all modes, sequential)
 
-Spawn Agent:
-- Reads: `phases/01-discover.md` + `agents/digger.md`
-- Input: problem statement, user's preferred angles (if any)
-- If DEEP: spawn a second Agent reading `agents/historian.md` after Digger completes
-- Produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
-- After: present root causes + HMW to user for confirmation before proceeding
+Phase 1 runs two agents in sequence, then optionally a third:
+
+1. **Context Scout** (first) — Reads: `agents/context-scout.md`; Input: problem statement, `$WORKSPACE` path; Produces: `$WORKSPACE/00-context.md` with citable facts tagged for confidence and (best-effort) adversarial evidence. Runs in **all modes**. Writes a stub only when the problem is truly ungroundable. Adds ~1–3 min of web-search wall-clock even in LITE mode.
+2. **Digger** (second) — Reads: `phases/01-discover.md` + `agents/digger.md` + `$WORKSPACE/00-context.md`. Digger's Step 0 consumes the Scout's output before proposing angles.
+3. **Historian** (DEEP mode only, after Digger) — Reads: `agents/historian.md`. → `$WORKSPACE/01-historian.md`. Any historical seeds it surfaces inherit grounding downstream when Phase 3 specialists embed cited facts into their batches.
+
+If Context Scout fails entirely, write a one-line stub to `$WORKSPACE/00-context.md` noting the session is operating on priors, then proceed to Digger normally.
+
+- Digger produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
+- After: present root causes + HMW (and a one-line context summary if `context_facts_count > 0`) to user for confirmation before proceeding
+- **Telemetry:** read `context_facts_count` and `adversarial_facts_count` from `$WORKSPACE/00-context.md` header and include in session summary
+
+**Scout vs Synthesize proof searches:** Phase 8 Synthesize performs its own web searches to validate top ideas. The two are complementary, not redundant — Scout's grounding is *broad* (problem-space, run before any ideas exist); Synthesize's is *narrow* (idea-specific, run against concrete candidates). Scout asks "what does reality look like here?"; Synthesize asks "does this specific idea hold up?"
 
 ### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 
@@ -67,7 +74,7 @@ Spawn 2-4 Agents simultaneously:
 - Each reads: `phases/03-seed.md` + `agents/<specialist>.md`
 - LITE: Innovator + Wild Card (2 agents)
 - STANDARD/DEEP: Provocateur + Innovator + Wild Card + Connector (4 agents)
-- Input: problem brief, root causes, HMW questions, IFR, TRIZ trade-off
+- Input: problem brief, root causes, HMW questions, IFR, TRIZ trade-off, `$WORKSPACE/00-context.md` path
 - If DEEP: also pass `$WORKSPACE/01-historian.md` (historical seeds)
 - Each produces: 10-18 seeds → `$WORKSPACE/seeds/<agent-name>.md` + Idea DB (IDs returned)
 
@@ -195,7 +202,8 @@ Pass the `--ids` range to each parallel agent. The agent uses `slice` to read on
 4. **Mandatory output standards** (above) go to every subagent.
 5. **`$WORKSPACE` path** goes to every subagent — they use it for all `idea_db.py` commands.
 6. **`references/idea-db.md`** path goes to every subagent that writes or reads ideas (Phases 3-10). The CSV is the shared state — agents read and write `$WORKSPACE/ideas.csv` via `python scripts/idea_db.py` commands documented in each phase/agent file.
-7. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
+7. **`$WORKSPACE/00-context.md`** is the shared grounding artifact written by the Context Scout in Phase 1. The primary consumers are **Digger** (Phase 1), **Phase 3 specialists**, and **Converge** (Phase 9) — each has explicit instructions on how to weight and cite facts. Other phases may access the file if they need grounding, but no other phase is required to branch on it. Consumers check `context_facts_count` to decide whether grounding is available.
+8. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
 
 ## The Idea Database
 

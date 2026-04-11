@@ -173,6 +173,7 @@ Return a short summary to the orchestrator containing:
 2. **Proof search verdicts**: Market validated / Unvalidated / Counter-evidence per idea
 3. **User's decision**: which idea(s) to act on
 4. **Round 2 decision** (DEEP mode): whether to run a second round, and if so, the new direction
+5. **Context grounding** (if `$WORKSPACE/00-context.md` has `context_facts_count > 0`): cite at least one fact from `00-context.md` in the final recommendation rationale, including source type and confidence. Format: `[Fact text] (Source: URL | type: [source_type] | date: [YYYY-MM-DD] | confidence: [strong/moderate/weak])`. When `adversarial_facts_count > 0`, cite at least one adversarial fact *alongside* confirming ones — tension between evidence is more informative than consensus. But present each adversarial fact as **one specific documented case**, never as proof that a category of idea won't work: most failures are not documented (survivorship bias), so what the scout found is a biased sliver, not a base rate.
 
 See `references/output-rules.md` for mandatory idea description and CSV column rules.
 

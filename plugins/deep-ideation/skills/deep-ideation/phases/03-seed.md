@@ -22,6 +22,7 @@ Every specialist gets:
 4. **TRIZ trade-off** (from Digger) — especially important for Innovator
 5. IFR statement (from Orchestrate)
 6. Historical seeds (DEEP mode, from Historian)
+7. **`$WORKSPACE/00-context.md`** — citable facts with epistemic tags (read before generating seeds; stub only when problem is ungroundable)
 
 ## What Each Specialist Produces
 
@@ -35,6 +36,8 @@ python scripts/idea_db.py add_batch <workspace> <agent>-seeds.json
 ```
 
 Each seed is: **one name + one sentence**. Tagged [SAFE/BOLD/WILD]. No elaboration.
+
+**Grounding requirement:** At least one seed per specialist batch must embed a cited fact from `00-context.md`. **Prefer strong-confidence facts over weak ones.** Adversarial facts (documented counter-evidence) are welcome input and can be especially useful for Provocateur-style inversions, but don't privilege them over confirming facts — documented failures are a survivorship-biased sample, not the failure space. If context is a stub, this requirement is waived.
 
 The Innovator additionally produces:
 - A filled-out TRIZ Contradiction Card

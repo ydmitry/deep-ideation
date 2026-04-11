@@ -29,7 +29,18 @@ AskUserQuestion:
     - "DEEP — maximum depth"
 ```
 
-## Step 3: Run the Digger
+## Step 3: Run the Context Scout
+
+**Context Scout** (`agents/context-scout.md`) runs first in all modes (LITE/STANDARD/DEEP).
+
+- The scout identifies the evidence types that matter for this problem, gathers citable facts with epistemic tags, and makes a **best-effort** search for adversarial evidence (counter-evidence, documented failures, regulatory pushback, critical reviews). Adversarial evidence is often unavailable — survivorship bias means most failures aren't documented, and the scout is told not to fabricate to meet a quota.
+- Output saved to `$WORKSPACE/00-context.md`.
+- The scout writes a stub **only** when the problem is genuinely ungroundable (rare).
+- Expect ~1–3 minutes of wall-clock time even in LITE mode (3–5 web searches).
+
+The Digger in Step 4 reads `$WORKSPACE/00-context.md` at its own Step 0 before proposing angles.
+
+## Step 4: Run the Digger
 
 See `agents/digger.md`.
 
@@ -43,7 +54,7 @@ The Digger:
 
 Output saved to `$WORKSPACE/01-discover.md`.
 
-## Step 4: Run the Historian (DEEP mode only)
+## Step 5: Run the Historian (DEEP mode only)
 
 See `agents/historian.md`.
 
@@ -56,7 +67,9 @@ The Historian resurfaces relevant ideas from previous sessions and adds up to 15
 
 Output saved to `$WORKSPACE/01-historian.md`.
 
-## Step 5: Confirm and Launch
+## Step 6: Confirm and Launch
+
+If `context_facts_count < 5` (below the scout's 5-fact floor), include a **thin-grounding warning** in the confirmation so the user can decide whether to proceed or refine the problem statement. The floor is aspirational — we can't force the scout to invent facts — but the user deserves visibility into how grounded the session actually is.
 
 ```
 AskUserQuestion:
@@ -73,12 +86,20 @@ AskUserQuestion:
     3. [HMW 3]
     4. [HMW 4]
 
+    [IF context_facts_count < 5:]
+    Grounding: Scout found [N] cited facts (target was 5). The session
+    will proceed on thin grounding — [N] real anchors and priors for the
+    rest. If you'd like stronger grounding, refine the problem statement
+    to name a specific market, domain, or benchmark the scout can search
+    for, and we'll rerun the scout.
+
     Ready to launch?"
   header: "Confirm"
   options:
     - "Yes, launch the swarm"
     - "Adjust the angles first"
     - "Change the TRIZ contradiction"
+    - "Refine the problem and rerun the scout"
 ```
 
 ## Output Requirements
@@ -90,6 +111,7 @@ Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator 
 3. **TRIZ trade-off** ("Improving X worsens Y")
 4. **Depth-layered ideas** (surface/mid/root per angle)
 5. **Complexity mode** selected by the user
+6. **Context telemetry** — `context_facts_count` and `adversarial_facts_count` from `$WORKSPACE/00-context.md` header
 
 If Historian ran (DEEP mode), also save `$WORKSPACE/01-historian.md` with up to 15 cross-domain seeds.
 
@@ -103,6 +125,7 @@ After DISCOVER, every agent receives:
 - **HMW questions** (4-6, each pointing in a different direction)
 - **TRIZ trade-off** ("Improving X worsens Y")
 - **IFR** (Ideal Final Result, set in ORCHESTRATE)
+- **`$WORKSPACE/00-context.md`** path — citable facts with epistemic tags (passed to every downstream agent; stub only when the problem is ungroundable)
 - **Historical seeds** (if Historian ran — DEEP mode)
 
 ## Anti-Patterns
