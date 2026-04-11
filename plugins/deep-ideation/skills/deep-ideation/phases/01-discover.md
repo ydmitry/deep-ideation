@@ -33,7 +33,7 @@ AskUserQuestion:
 
 **Context Scout** (`agents/context-scout.md`) runs first in all modes (LITE/STANDARD/DEEP).
 
-- The scout identifies the evidence types that matter for this problem, gathers citable facts with epistemic tags, and always tries for at least one falsification fact.
+- The scout identifies the evidence types that matter for this problem, gathers citable facts with epistemic tags, and makes a **best-effort** search for adversarial evidence (counter-evidence, documented failures, regulatory pushback, critical reviews). Adversarial evidence is often unavailable — survivorship bias means most failures aren't documented, and the scout is told not to fabricate to meet a quota.
 - Output saved to `$WORKSPACE/00-context.md`.
 - The scout writes a stub **only** when the problem is genuinely ungroundable (rare).
 - Expect ~1–3 minutes of wall-clock time even in LITE mode (3–5 web searches).
@@ -111,7 +111,7 @@ Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator 
 3. **TRIZ trade-off** ("Improving X worsens Y")
 4. **Depth-layered ideas** (surface/mid/root per angle)
 5. **Complexity mode** selected by the user
-6. **Context telemetry** — `context_facts_count` and `falsification_facts_count` from `$WORKSPACE/00-context.md` header
+6. **Context telemetry** — `context_facts_count` and `adversarial_facts_count` from `$WORKSPACE/00-context.md` header
 
 If Historian ran (DEEP mode), also save `$WORKSPACE/01-historian.md` with up to 15 cross-domain seeds.
 

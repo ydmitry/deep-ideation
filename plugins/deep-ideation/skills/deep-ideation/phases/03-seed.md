@@ -37,7 +37,7 @@ python scripts/idea_db.py add_batch <workspace> <agent>-seeds.json
 
 Each seed is: **one name + one sentence**. Tagged [SAFE/BOLD/WILD]. No elaboration.
 
-**Grounding requirement:** At least one seed per specialist batch must embed a cited fact from `00-context.md`. **Prefer strong-confidence facts over weak ones, and falsification facts over confirming ones** — a seed that reacts to a documented failure is worth more than a seed that decorates itself with a community post. If context is a stub, this requirement is waived.
+**Grounding requirement:** At least one seed per specialist batch must embed a cited fact from `00-context.md`. **Prefer strong-confidence facts over weak ones.** Adversarial facts (documented counter-evidence) are welcome input and can be especially useful for Provocateur-style inversions, but don't privilege them over confirming facts — documented failures are a survivorship-biased sample, not the failure space. If context is a stub, this requirement is waived.
 
 The Innovator additionally produces:
 - A filled-out TRIZ Contradiction Card

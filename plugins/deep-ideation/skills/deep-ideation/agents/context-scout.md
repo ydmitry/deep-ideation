@@ -28,13 +28,24 @@ Common evidence types — use as a starting palette, not a checklist:
 
 A SaaS pricing question wants competitors and churn data. A database optimisation question wants benchmarks and postmortems. A novel's Act 2 wants canonical exemplars and critical analyses. A career decision wants labor data and transition stories. A teaching problem wants pedagogical research and curricula. A clinical question wants trial data and guidelines. These aren't classes to assign — they're shapes the evidence takes when you actually go looking.
 
-## Step 2: Always Gather Falsification Facts
+## Step 2: Search for Adversarial Evidence
 
-On top of the evidence types you picked in Step 1, always ask: *has this been attempted? what happened?*
+On top of the evidence types you picked in Step 1, spend at least one search on evidence that *cuts against* the obvious solution — not just evidence that supports it. Downstream agents need facts they can argue with, and agreement is cheap; disagreement is where the signal lives.
 
-Falsification is the single highest-signal fact type because it's the one priors can't fake. Training data contains endless "here's how to solve X," but specific documented *failures* are rarer and harder to hallucinate. Allocate at least one search to falsification regardless of what kind of problem this is.
+Adversarial evidence includes:
 
-Phrasings to try: "who tried this and quit," "what postmortems exist," "which attempts failed and why," "what replications didn't work," "what critically-panned examples exist."
+- Documented failures, postmortems, shutdowns
+- Regulatory pushback, legal challenges, compliance constraints
+- Critical reviews, negative case studies, user complaints
+- Known tradeoffs and unavoidable costs
+- Contested or disputed findings, failed replications
+- Documented limitations of existing tools or methods
+
+Phrasings to try: "who tried this and quit," "what postmortems exist," "which attempts failed and why," "regulatory pushback on X," "critical reviews of Y," "known limitations of Z."
+
+**Survivorship bias — read before you believe any failure you find.** The failures you're able to find are a heavily biased sample: most failures are never written up. Failed startups die quietly; failed replications get filed away; people who quit habits don't blog about it. The documented failures that *do* exist tend to be the high-profile ones, the ones whose founders became essayists, the ones with clean narratives someone wanted to publish (often self-serving). Treat every adversarial fact you find as **one specific documented case**, never as a base rate or a probability statement about how often this kind of idea fails. Absence of documented failures does NOT mean an idea is safe — it usually just means failures aren't written down.
+
+**This search is best-effort, not mandatory.** If you can't find adversarial evidence for this problem, note that in Coverage Gaps and move on. Do not fabricate adversarial-looking facts to meet a quota — a fake failure narrative is worse than no failure narrative, because it looks like grounding and isn't.
 
 ## Step 3: Run Web Searches
 
@@ -65,7 +76,7 @@ A 2019 Gartner summary and a 2024 Reddit thread are both facts. Agents should ar
 # Context: [Problem slug]
 
 context_facts_count: N
-falsification_facts_count: M
+adversarial_facts_count: M
 
 ## Facts
 
@@ -73,9 +84,11 @@ falsification_facts_count: M
    - Source: [URL] | type: [source_type] | directness: [primary/secondary] | date: [YYYY-MM-DD | undated] | confidence: [strong/moderate/weak/disputed]
 2. ...
 
-## Falsification
+## Adversarial Evidence
 
-- **[What was tried]** — [What happened, specifically].
+(Counter-evidence, documented failures, regulatory pushback, critical reviews, known tradeoffs. Each is **one specific case**, not a base rate. See Step 2 on survivorship bias.)
+
+- **[What the evidence shows]** — [Specific documented case, not a generalisation].
   - Source: [URL] | type: ... | directness: ... | date: ... | confidence: ...
 
 ## Coverage Gaps
@@ -85,14 +98,14 @@ falsification_facts_count: M
 
 ## Floors
 
-- **5 facts minimum**, of which **at least 1 must be a falsification fact** whenever any can be found.
-- If fewer than 5 facts exist for this problem after honest searching, write what you have and declare gaps explicitly in the Coverage Gaps section.
+- **5 facts is the target**, not a gate. Aim for it. If fewer than 5 facts exist for this problem after honest searching, write what you have and declare gaps explicitly in the Coverage Gaps section. Phase 1 Step 6 surfaces thin grounding to the user.
+- **Adversarial evidence is best-effort, not mandatory.** Try to find at least one piece of counter-evidence, but accept that most failure modes aren't documented (survivorship bias, Step 2). If you can't find any, note it as a Coverage Gap — don't fabricate.
 - If the problem is genuinely ungroundable (rare — most problems have *some* citable reality), write a one-line stub:
 
 ```markdown
 # Context: [Problem slug]
 context_facts_count: 0
-falsification_facts_count: 0
+adversarial_facts_count: 0
 
 No citable reality found for this problem — session will operate on priors.
 ```
@@ -118,6 +131,7 @@ The final `00-context.md` should read as a list of *claims made by named sources
 - **Cite everything.** An untagged fact is a prior pretending to be a fact. Don't keep it.
 - **Be precise.** "Market is growing" is useless. "Market grew 34% YoY to $2.1B in 2024 (Gartner)" is a fact.
 - **Never invent facts.** If you can't find it, say so in Coverage Gaps.
-- **Falsification beats confirmation.** Given a choice between one more confirming fact and one falsification fact, take falsification.
 - **Weight by confidence, not by quantity.** Five weak community posts ≠ one peer-reviewed study.
+- **Diverse evidence beats monoculture.** Prefer facts that come from different source types and argue with each other over a pile of facts that all agree. Tension between strong claims is more informative than consensus among weak ones.
+- **Survivorship bias is real.** The facts you find are the ones that got written down. For failures and counter-evidence especially, this is a heavily biased sample — most failures aren't documented. Never treat the facts you gathered as a base rate, a probability, or a complete picture of "what tends to happen." Each fact is one specific documented case.
 - **One sentence per fact.** Agents interpret; you gather.
