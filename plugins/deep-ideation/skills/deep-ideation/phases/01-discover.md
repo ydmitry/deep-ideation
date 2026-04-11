@@ -67,40 +67,13 @@ The Historian resurfaces relevant ideas from previous sessions and adds up to 15
 
 Output saved to `$WORKSPACE/01-historian.md`.
 
-## Step 6: Confirm and Launch
+## Step 6: Write Output and Return
 
-If `context_facts_count < 5` (below the scout's 5-fact floor), include a **thin-grounding warning** in the confirmation so the user can decide whether to proceed or refine the problem statement. The floor is aspirational — we can't force the scout to invent facts — but the user deserves visibility into how grounded the session actually is.
+Save to `$WORKSPACE/01-discover.md` and return a short summary to the orchestrator.
 
-```
-AskUserQuestion:
-  question: "Root causes found:
-    - [Root Cause A in one sentence]
-    - [Root Cause B in one sentence]
-    - [Root Cause C in one sentence]
+The **framing confirmation** (presenting root causes + TRIZ + HMW to the user) is handled by the orchestrator's Framing Gate after this phase completes — not here. This keeps the user-facing checkpoint in the orchestrator so it cannot be silently skipped.
 
-    Core contradiction (for TRIZ): Improving [X] worsens [Y]
-
-    HMW questions:
-    1. [HMW 1]
-    2. [HMW 2]
-    3. [HMW 3]
-    4. [HMW 4]
-
-    [IF context_facts_count < 5:]
-    Grounding: Scout found [N] cited facts (target was 5). The session
-    will proceed on thin grounding — [N] real anchors and priors for the
-    rest. If you'd like stronger grounding, refine the problem statement
-    to name a specific market, domain, or benchmark the scout can search
-    for, and we'll rerun the scout.
-
-    Ready to launch?"
-  header: "Confirm"
-  options:
-    - "Yes, launch the swarm"
-    - "Adjust the angles first"
-    - "Change the TRIZ contradiction"
-    - "Refine the problem and rerun the scout"
-```
+If `context_facts_count < 5` (below the Context Scout's 5-fact floor), surface this in the return summary so the orchestrator can include a **thin-grounding warning** in its Framing Gate prompt. The user deserves visibility into how grounded the session actually is; the orchestrator decides how to present it.
 
 ## Output Requirements
 

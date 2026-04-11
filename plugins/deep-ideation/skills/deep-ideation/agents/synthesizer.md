@@ -130,14 +130,6 @@ Save to `$WORKSPACE/seed-bank.md`:
 | 1 | [seed name] | Provocateur | A, C | 4 ideas | [mechanism] |
 ```
 
-### Step 8: Phased Roadmap
-
-Qualitative, ordered. No time estimates — describe readiness, not schedules.
-
-- **Start immediately:** ideas ready to act on now (low structural risk, existing resources)
-- **After validation:** ideas contingent on proof-search findings
-- **Explore if capacity allows:** moonshots and high-novelty bets worth testing
-
 ## Output Format
 
 ```markdown
@@ -187,13 +179,6 @@ Qualitative, ordered. No time estimates — describe readiness, not schedules.
 | "[idea keyword] failed shutdown postmortem" | Why similar ideas failed | Learn what to avoid | No public failures (good or unknown) |
 
 **If WebSearch was run:** [actual findings summary with links]
-
----
-
-## Phased Roadmap
-**Start immediately:** [list — ideas ready to act on now]
-**After validation:** [ideas contingent on proof-search findings]
-**Explore if capacity allows:** [moonshots and high-novelty bets]
 
 ---
 
