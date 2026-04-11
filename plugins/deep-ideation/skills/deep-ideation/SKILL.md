@@ -19,6 +19,7 @@ Choose before starting. Ask the user if unclear.
 
 **LITE skips:** ORCHESTRATE, DISTRIBUTE, BUILD, TENSION, COLLISION MAP, RATCHET, HAT EVAL, STRESS-TEST.
 **DEEP adds:** Historian after DISCOVER, full Collision Map (all zones), Ratchet (3 cycles), Hat Eval, Round 2 option.
+**Corporate/Strategic scope adds:** Market Analyst specialist in SEED (Phase 3); economics columns in Idea DB; segment/pricing criteria in SYNTHESIZE; Q8 in Brilliance Filter; economics panel in CONVERGE. Never active in LITE mode.
 
 ## Workspace Setup
 
@@ -59,17 +60,19 @@ Spawn Agent:
 Spawn Agent:
 - Reads: `phases/02-orchestrate.md` + `$WORKSPACE/01-discover.md`
 - Input: discover summary (root causes, HMW questions, TRIZ trade-off)
-- Produces: problem type, specialist emphasis, IFR, distribution plan → `$WORKSPACE/02-orchestrate.md`
+- Produces: problem type, specialist emphasis, IFR, distribution plan, **run scope (personal / corporate / strategic)** → `$WORKSPACE/02-orchestrate.md`
 
 ### Phase 3: SEED (all modes, parallel)
 
-Spawn 2-4 Agents simultaneously:
+Spawn 2-5 Agents simultaneously:
 - Each reads: `phases/03-seed.md` + `agents/<specialist>.md`
 - LITE: Innovator + Wild Card (2 agents)
 - STANDARD/DEEP: Provocateur + Innovator + Wild Card + Connector (4 agents)
+- **Corporate/strategic scope:** also spawn Market Analyst (`agents/market-analyst.md`) — 5 agents total; reads scope from `$WORKSPACE/02-orchestrate.md`
 - Input: problem brief, root causes, HMW questions, IFR, TRIZ trade-off
 - If DEEP: also pass `$WORKSPACE/01-historian.md` (historical seeds)
 - Each produces: 10-18 seeds → `$WORKSPACE/seeds/<agent-name>.md` + Idea DB (IDs returned)
+- **Corporate/strategic:** Market Analyst additionally initializes economics columns (`segment_shift`, `pricing_shift`, `revenue_model`, `unit_economics_note`) and populates them for its seeds
 
 ### Phase 4: DISTRIBUTE (skip in LITE, sequential)
 

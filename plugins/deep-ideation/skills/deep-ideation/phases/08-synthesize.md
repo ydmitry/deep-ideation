@@ -46,10 +46,38 @@ python scripts/idea_db.py add_batch <workspace> hybrid-ideas.json
 # JSON format: [{"name":"...","description":"...","source_agent":"Synthesizer","chain":"Hybrid: #12 + #34 → ...","tag":"BOLD","phase":"synthesis"}]
 
 # Register the session's evaluation criteria and composite column (Phase 8.5 will fill them)
+# Standard run:
 python scripts/idea_db.py add_criteria <workspace> \
   --criteria "feasibility,novelty,[session-criteria]" \
   --composite "total_score"
+
+# Corporate / strategic run — always include economics dimensions:
+python scripts/idea_db.py add_criteria <workspace> \
+  --criteria "feasibility,novelty,segment_viability,pricing_fit,[session-criteria]" \
+  --composite "total_score"
 ```
+
+## Strategic Runs: Economics Criteria
+
+If the run scope is `corporate` or `strategic` (check `$WORKSPACE/02-orchestrate.md`), the Synthesizer **must** include `segment_viability` and `pricing_fit` as explicit evaluation criteria, in addition to the session-derived criteria.
+
+**`segment_viability`** — How well does this idea serve a clearly defined, reachable buyer segment? Does it bet on a segment the team can actually access?
+
+**`pricing_fit`** — Is the implied pricing model coherent with the product mechanics and the buyer's willingness to pay? Does the revenue model hold under realistic take-rates?
+
+For strategic runs, the Synthesizer must also add a **Go-to-Market Summary** section to `$WORKSPACE/08-synthesize.md`:
+
+```
+## Go-to-Market Summary (Strategic Run)
+
+For each hybrid and top candidate, summarize:
+- **Segment:** [Which buyer segment this idea targets]
+- **Pricing model:** [What pricing structure this implies]
+- **Sales motion:** [How this reaches buyers — PLG, SLG, channel, viral]
+- **Key GTM risk:** [The one thing that could kill adoption before product-market fit]
+```
+
+Populate this from the `segment_shift`, `pricing_shift`, `revenue_model`, and `unit_economics_note` columns already filled by the Market Analyst and other specialists in SEED phase.
 
 ## Expected Output
 

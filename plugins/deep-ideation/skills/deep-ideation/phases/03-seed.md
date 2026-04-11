@@ -10,8 +10,16 @@ Launch specialist agents simultaneously. Each gets the Problem Brief + HMW quest
 - **Wild Card** → `agents/wild-card.md` — Crazy 8s, random stimuli, personas
 - **Connector** → `agents/connector.md` — Synectics across 6 domains
 
+### Corporate / Strategic scope (add 1 specialist):
+- **Market Analyst** → `agents/market-analyst.md` — segment choice, pricing model, packaging, sales motion, competitive positioning
+- Required when `scope = corporate` or `strategic` (set in Phase 2: ORCHESTRATE)
+- Runs in parallel with the 4 standard specialists (5 agents total in STANDARD/DEEP)
+- Initializes economics columns in the Idea DB: `segment_shift`, `pricing_shift`, `revenue_model`, `unit_economics_note`
+- All other specialists should populate these columns when their seeds have clear economic implications
+
 ### LITE mode (2 specialists):
 - **Innovator** + **Wild Card** only
+- Market Analyst is never included in LITE mode
 
 ## What Each Specialist Receives
 
@@ -42,15 +50,19 @@ The Innovator additionally produces:
 
 ## Expected Output
 
-| Specialist | Min Seeds | Max Seeds |
-|-----------|-----------|-----------|
-| Provocateur | 10 | 15 |
-| Innovator | 12 | 18 |
-| Wild Card | 12 | 18 |
-| Connector | 10 | 15 |
-| **Total** | **44** | **66** |
+| Specialist | Min Seeds | Max Seeds | When Active |
+|-----------|-----------|-----------|-------------|
+| Provocateur | 10 | 15 | STANDARD/DEEP |
+| Innovator | 12 | 18 | All modes |
+| Wild Card | 12 | 18 | All modes |
+| Connector | 10 | 15 | STANDARD/DEEP |
+| Market Analyst | 10 | 15 | Corporate/Strategic scope only |
+| **Total (standard)** | **44** | **66** | |
+| **Total (strategic)** | **54** | **81** | |
 
-While running, tell the user: "Four specialists are generating raw seed ideas in parallel. Expected: 40-60 seeds."
+While running, tell the user:
+- Standard: "Four specialists are generating raw seed ideas in parallel. Expected: 40-60 seeds."
+- Strategic/Corporate: "Five specialists are generating raw seed ideas in parallel, including a Market Analyst for go-to-market dimensions. Expected: 50-75 seeds."
 
 ## Anti-Patterns
 - Don't let specialists elaborate seeds — one sentence only

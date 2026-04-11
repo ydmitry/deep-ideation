@@ -36,6 +36,20 @@ For each surviving idea:
 - **Failure evidence**: why similar ideas failed (if found — this is the most valuable data)
 - **Verdict**: Market validated / Unvalidated / Counter-evidence found
 
+**For corporate / strategic runs** (check `$WORKSPACE/02-orchestrate.md`), also report for each surviving direction:
+- **Segment**: which buyer segment this idea targets (from `segment_shift` column or Go-to-Market Summary in `08-synthesize.md`)
+- **Pricing model**: what revenue model this implies (from `pricing_shift` + `revenue_model` columns)
+- **GTM risk**: the one go-to-market risk that most threatens adoption (from `unit_economics_note` or stress test)
+
+Present these as a compact economics panel per idea:
+
+```
+**[Idea Name] — Economics**
+Segment: [who buys this and why them]
+Pricing: [model + rationale]
+GTM risk: [the one thing that could kill go-to-market]
+```
+
 ```
 AskUserQuestion:
   question: "Here are your top ideas with proof search findings:

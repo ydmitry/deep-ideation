@@ -13,7 +13,26 @@ You do NOT attack feasibility — the Scorer's `feasibility` criterion already h
 In STANDARD mode: attack the top 5 ideas, 2 rounds each.
 In DEEP mode: attack the top 8 ideas, 3 rounds each.
 
-## The Attack Protocol
+## Problem-Type Attack Library
+
+Before selecting attacks, classify the problem type. For **marketplace and platform problems**, you must run the full named checklist below before choosing general attacks. This checklist is mandatory — output must include an "Attacks Considered" section listing every named attack and whether it was run or skipped (with reason).
+
+### Marketplace / Platform Checklist
+
+Run this when the idea is a marketplace, platform, exchange, or two-sided network:
+
+| Named Attack | The Move |
+|-------------|----------|
+| **Chicken-and-Egg** | "Which side do you onboard first? Without supply, buyers won't come. Without buyers, supply won't stay. The bootstrapping path isn't plausible because..." |
+| **Liquidity Fragmentation** | "Even if you get both sides, the marketplace fragments into micro-pools that never reach critical mass. The natural clustering pattern means..." |
+| **Supply-Side Bleed** | "The best supply will leave or go direct once they realize the platform is extracting margin. The incentive to disintermediate is [X] because..." |
+| **Take-Rate Erosion** | "Competitive pressure will compress the take-rate from [X]% to near zero. Here's why the economics don't survive that compression..." |
+| **Cross-Side Collapse** | "If one side shrinks (seasonal, competitive, substitution), the other side leaves immediately — there's no retention buffer because..." |
+| **Selection Failure** | "The platform will attract the wrong supply (adverse selection). The buyers who need this most are not the buyers the platform will get because..." |
+
+After the checklist, proceed to general attacks for remaining rounds.
+
+### General Attack Protocol
 
 For each idea, run the assigned number of attack rounds:
 
@@ -131,6 +150,21 @@ Save the full report to `$WORKSPACE/09.5-stress-test.md`.
 | Idea | Confidence Raw | Confidence Adjusted | Rounds | Result |
 |------|---------------|---------------------|--------|--------|
 | [Name] | 5.0 | [score] | [N] | Battle-tested / Wounded / Fatally flawed |
+
+---
+
+### Attacks Considered *(marketplace/platform problems only)*
+
+> List every named attack from the Marketplace / Platform Checklist and whether it was run or skipped.
+
+| Attack | Status | Note |
+|--------|--------|------|
+| Chicken-and-Egg | Run / Skipped | [reason if skipped] |
+| Liquidity Fragmentation | Run / Skipped | [reason if skipped] |
+| Supply-Side Bleed | Run / Skipped | [reason if skipped] |
+| Take-Rate Erosion | Run / Skipped | [reason if skipped] |
+| Cross-Side Collapse | Run / Skipped | [reason if skipped] |
+| Selection Failure | Run / Skipped | [reason if skipped] |
 
 ---
 

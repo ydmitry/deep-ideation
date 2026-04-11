@@ -71,6 +71,11 @@ python scripts/idea_db.py add_criteria <workspace> \
   --criteria "feasibility,novelty,trust_building,scalability" \
   --composite "total_score"
 
+# Strategic/corporate runs — also include economics criteria:
+python scripts/idea_db.py add_criteria <workspace> \
+  --criteria "feasibility,novelty,segment_viability,pricing_fit,trust_building,scalability" \
+  --composite "total_score"
+
 # Add the menu_bucket column (Scorer assigns qualitative labels)
 python scripts/idea_db.py add_column <workspace> menu_bucket --default ""
 # Valid values: quick_win / core_bet / moonshot / "" (no bucket)
@@ -82,6 +87,13 @@ python scripts/idea_db.py add_column <workspace> evidence_summary --default ""
 # Add TRIZ trade-off resolution column
 python scripts/idea_db.py add_column <workspace> triz_status --default ""
 # Values: resolves / picks_side / sidesteps
+
+# Add Economics columns (Phase 3 — corporate/strategic scope only)
+# Initialized by Market Analyst; all specialists populate when relevant
+python scripts/idea_db.py add_column <workspace> segment_shift --default ""
+python scripts/idea_db.py add_column <workspace> pricing_shift --default ""
+python scripts/idea_db.py add_column <workspace> revenue_model --default ""
+python scripts/idea_db.py add_column <workspace> unit_economics_note --default ""
 
 # Add Stress Test columns (Phase 9.5 — STANDARD + DEEP modes)
 python scripts/idea_db.py add_column <workspace> confidence_raw --default "5.0"
@@ -156,17 +168,17 @@ python scripts/idea_db.py compute <workspace> \
 
 | Phase | What to Record |
 |-------|---------------|
-| **SEED** | All specialist seeds: name, description, source_agent, tag, phase=seed |
+| **SEED** | All specialist seeds: name, description, source_agent, tag, phase=seed. **Corporate/strategic:** Market Analyst initializes and fills economics columns (segment_shift, pricing_shift, revenue_model, unit_economics_note); all specialists annotate when relevant. |
 | **TRIAGE** | Update tags; add `triage_category` column (hot/warm/cold/discard) |
 | **DISTRIBUTE** | Add `assigned_to` column if tracking John assignments |
 | **TRANSFORM** | All John outputs: source_agent, source_seed (ID), chain, tag, phase=transform, temperature_zone |
 | **BUILD** | Brainwriter builds: phase=build, chain references parents, seed_usage updates |
 | **HAT EVAL** | Add hat evaluation columns per idea (white_note, red_note, black_note, etc.) |
 | **TENSION** | Resolution ideas: phase=tension, triz_status for top ideas |
-| **SYNTHESIZE** | Hybrids: phase=synthesis, full chains. Register evaluation criteria + composite column. Add validation. NO scoring here — the Scorer applies the criteria in Phase 8.5. |
+| **SYNTHESIZE** | Hybrids: phase=synthesis, full chains. Register evaluation criteria + composite column. Add validation. **Corporate/strategic:** register segment_viability and pricing_fit as explicit criteria. NO scoring here — the Scorer applies the criteria in Phase 8.5. |
 | **SCORE** (Phase 8.5) | Fill session criteria columns (e.g., feasibility, novelty, plus session-specific). Compute `total_score` via weighted_avg. Add `menu_bucket` and assign qualitative labels (quick_win / core_bet / moonshot / empty). |
 | **STRESS-TEST** | Add stress columns (confidence_raw, confidence_adjusted, stress_rounds, stress_attacks, stress_results, stress_strongest_objection, stress_modifications). `confidence_adjusted` is the authoritative battle-test confidence for each idea. |
-| **CONVERGE** | Add proof search columns (proof_queries, proof_findings, proof_verdict) |
+| **CONVERGE** | Add proof search columns (proof_queries, proof_findings, proof_verdict). **Corporate/strategic:** present segment + pricing per surviving direction. |
 
 ## Session Artifacts
 
@@ -197,3 +209,14 @@ The user can:
 | `stress_results` | string | Semicolon-separated list of outcomes per round (survived_cleanly / survived_modified / fatal_wound / no_good_objection) |
 | `stress_strongest_objection` | string | The best attack that didn't kill the idea — a residual risk to monitor |
 | `stress_modifications` | string | Changes the idea needed to survive attacks, or "None" |
+
+### Economics Column Reference *(corporate / strategic runs only)*
+
+Initialized by the Market Analyst in SEED phase. All specialists populate when relevant.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `segment_shift` | string | Which buyer segment this idea targets or implies (e.g., "SMB-first", "enterprise land-and-expand", "prosumer crossover") |
+| `pricing_shift` | string | Pricing model this idea implies or requires (e.g., "usage-based", "outcome-based", "freemium entry") |
+| `revenue_model` | string | Broader revenue mechanics (e.g., "marketplace take-rate", "SaaS subscription", "professional services uplift") |
+| `unit_economics_note` | string | One sentence on why the unit economics work or the key CAC/LTV assumption |
