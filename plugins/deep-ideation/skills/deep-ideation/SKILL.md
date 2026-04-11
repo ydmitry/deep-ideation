@@ -45,18 +45,21 @@ For each phase: spawn an Agent, pass it the files to read, the input from prior 
 - `$WORKSPACE` path — for all file reads/writes and `idea_db.py` commands
 - Problem statement (one sentence)
 
-### Phase 1: DISCOVER (all modes)
+### Phase 1: DISCOVER (all modes, sequential)
 
-Spawn two Agents in parallel:
-1. **Reality Scout** — Reads: `agents/context-scout.md`; Input: problem statement, `$WORKSPACE` path; Produces: `$WORKSPACE/00-context.md` with citable facts, epistemic tags, and falsification facts. Runs in **all modes**. Writes a stub only when the problem is truly ungroundable.
-2. **Digger** — Reads: `phases/01-discover.md` + `agents/digger.md`. Waits for Reality Scout to finish, then reads `$WORKSPACE/00-context.md` at its Step 0 before proposing angles.
+Phase 1 runs two agents in sequence, then optionally a third:
 
-If Reality Scout fails, proceed with a stub and note the session is operating on priors.
+1. **Context Scout** (first) — Reads: `agents/context-scout.md`; Input: problem statement, `$WORKSPACE` path; Produces: `$WORKSPACE/00-context.md` with citable facts, epistemic tags, and falsification facts. Runs in **all modes**. Writes a stub only when the problem is truly ungroundable. Adds ~1–3 min of web-search wall-clock even in LITE mode.
+2. **Digger** (second) — Reads: `phases/01-discover.md` + `agents/digger.md` + `$WORKSPACE/00-context.md`. Digger's Step 0 consumes the Scout's output before proposing angles.
+3. **Historian** (DEEP mode only, after Digger) — Reads: `agents/historian.md` + `$WORKSPACE/00-context.md`. Historical seeds are subject to the same grounding as new seeds. → `$WORKSPACE/01-historian.md`
+
+If Context Scout fails entirely, write a one-line stub to `$WORKSPACE/00-context.md` noting the session is operating on priors, then proceed to Digger normally.
 
 - Digger produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
 - After: present root causes + HMW (and a one-line context summary if `context_facts_count > 0`) to user for confirmation before proceeding
-- If DEEP: spawn a third Agent reading `agents/historian.md` after Digger completes → `$WORKSPACE/01-historian.md`
 - **Telemetry:** read `context_facts_count` and `falsification_facts_count` from `$WORKSPACE/00-context.md` header and include in session summary
+
+**Scout vs Synthesize proof searches:** Phase 8 Synthesize performs its own web searches to validate top ideas. The two are complementary, not redundant — Scout's grounding is *broad* (problem-space, run before any ideas exist); Synthesize's is *narrow* (idea-specific, run against concrete candidates). Scout asks "what does reality look like here?"; Synthesize asks "does this specific idea hold up?"
 
 ### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 

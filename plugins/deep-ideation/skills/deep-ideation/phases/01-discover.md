@@ -29,15 +29,16 @@ AskUserQuestion:
     - "DEEP — maximum depth"
 ```
 
-## Step 3: Run Reality Scout + Digger in Parallel
+## Step 3: Run the Context Scout
 
-**Reality Scout** (`agents/context-scout.md`) runs simultaneously with the Digger in all modes (LITE/STANDARD/DEEP) regardless of problem class.
+**Context Scout** (`agents/context-scout.md`) runs first in all modes (LITE/STANDARD/DEEP).
 
 - The scout identifies the evidence types that matter for this problem, gathers citable facts with epistemic tags, and always tries for at least one falsification fact.
 - Output saved to `$WORKSPACE/00-context.md`.
-- The scout writes a stub **only** when the problem is genuinely ungroundable (rare) — not as a shortcut for any particular mode or problem class.
+- The scout writes a stub **only** when the problem is genuinely ungroundable (rare).
+- Expect ~1–3 minutes of wall-clock time even in LITE mode (3–5 web searches).
 
-Digger waits for the scout to finish, then reads `00-context.md` at its Step 0 before proposing angles.
+The Digger in Step 4 reads `$WORKSPACE/00-context.md` at its own Step 0 before proposing angles.
 
 ## Step 4: Run the Digger
 
