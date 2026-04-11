@@ -209,3 +209,32 @@ python scripts/idea_db.py export_md <ws>               # markdown export
 ```
 
 **Every subagent should run `describe` first** to discover which columns exist from prior phases before reading or writing the CSV.
+
+## Session Telemetry
+
+Track token usage and wall-clock time for every subagent call and append to `$WORKSPACE/telemetry.jsonl`. This powers the Session Cost footer in Phase 9.
+
+**After each Agent call, append one JSON line:**
+```json
+{"phase": "03-seed:innovator", "tokens": 12400, "duration_ms": 18200, "mode": "STANDARD"}
+```
+
+- `phase` — phase ID + agent name (e.g. `"05-transform:john-a"`, `"08-synthesize"`)
+- `tokens` — total tokens consumed by that subagent (input + output)
+- `duration_ms` — wall-clock milliseconds from spawn to result
+- `mode` — `"LITE"`, `"STANDARD"`, or `"DEEP"`
+
+**Bash append pattern:**
+```bash
+echo '{"phase":"<phase>","tokens":<n>,"duration_ms":<ms>,"mode":"<MODE>"}' >> "$WORKSPACE/telemetry.jsonl"
+```
+
+**Historical averages for comparison** (used by Phase 9 cost footer):
+
+| Mode | Typical tokens | Typical duration |
+|------|---------------|-----------------|
+| LITE | ~200k | ~8 min |
+| STANDARD | ~1.1M | ~40 min |
+| DEEP | ~2.5M | ~90 min |
+
+Phase 9 reads `telemetry.jsonl` to compute totals and compare against these baselines.

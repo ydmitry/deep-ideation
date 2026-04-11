@@ -114,6 +114,36 @@ python scripts/idea_db.py set <workspace> <id> user_action "saved_for_later"
 
 This ensures the Historian in future sessions can see not just which ideas scored well, but which ones the user actually chose to act on.
 
+## Session Cost Footer
+
+Before presenting the final confirmation, compute and display the session cost from `$WORKSPACE/telemetry.jsonl`:
+
+```
+Session Cost
+────────────────────────────────────────
+Total tokens:   [SUM of all tokens]
+Wall-clock:     [SUM of duration_ms → formatted as Xh Ym]
+
+Per-phase breakdown:
+  01-discover       [tokens]   [duration]
+  03-seed           [tokens]   [duration]
+  ...
+
+vs. typical [MODE] run: [TOTAL] is [X.Xх] a typical [MODE] session
+                        ([higher/lower] than average)
+
+Could this have run in LITE? [Yes — final cohort was ≤5 ideas / No — [N] ideas required full pipeline]
+```
+
+**How to compute:**
+1. Read all lines from `$WORKSPACE/telemetry.jsonl`
+2. Sum `tokens` and `duration_ms` across all entries
+3. Group by `phase` for the per-phase table
+4. Divide total by mode baseline (from SKILL.md table) to get the multiplier
+5. LITE verdict: if the Idea Menu had ≤5 surviving ideas and no Collision/Ratchet phases were needed, verdict is "Yes"; otherwise "No — [reason]"
+
+If `telemetry.jsonl` does not exist or is empty, omit the cost footer silently.
+
 ## Saving the Session
 
 Regardless of what the user decides, confirm:
@@ -127,13 +157,18 @@ AskUserQuestion:
     - Seed Bank: $WORKSPACE/seed-bank.md (for future sessions)
 
     The Idea Menu has [N] Quick Wins, [N] Core Bets, [N] Moonshots.
-    Your top pick: [#1 from their decision above]"
+    Your top pick: [#1 from their decision above]
+
+    Want this as a re-weightable spreadsheet? Say 'export to xlsx'."
   header: "Session Complete"
   options:
     - "Great, I'll act on [choice] today"
     - "Export the top ideas as a summary"
+    - "Export to xlsx — re-weightable scorecard"
     - "Start a new session on a different problem"
 ```
+
+When the user chooses **"Export to xlsx"** or says "export to xlsx": invoke the `anthropic-skills:xlsx` skill and pass it the path to `$WORKSPACE/ideas.csv` along with `references/xlsx-export-pattern.md` for the column-to-scorecard mapping.
 
 ## What Gets Saved
 
