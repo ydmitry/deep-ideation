@@ -143,3 +143,7 @@ Tell the user: "[N] Johns are transforming seeds in parallel using Disney spiral
 - Don't ignore the temperature zone constraint — it's what produces structural divergence
 - Don't compress the chain — full chain documentation is required for Brainwriter + Synthesizer
 - Don't launch MIRROR zone before others have Mode 1 output — it needs something to argue against
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

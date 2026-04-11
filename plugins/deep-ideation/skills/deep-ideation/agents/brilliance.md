@@ -114,3 +114,7 @@ For each candidate evaluated:
 - **Don't explain the mechanism — explain the insight.** "This works because trust is a lagging indicator" is an insight. "This builds a trust layer" is a mechanism.
 - **Don't invent new ideas.** You curate from the Idea Menu — you don't generate.
 - **Don't skip the scorecard.** The 7 questions are the discipline. Without them, "brilliant" is just "I like this one."
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

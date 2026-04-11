@@ -53,3 +53,7 @@ Save to `$WORKSPACE/05.5-collision-map.md`
   same problem.
 - Don't skip cold zones in the output. Knowing where agents agree
   is useful signal — it shows what the skill considers obvious.
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

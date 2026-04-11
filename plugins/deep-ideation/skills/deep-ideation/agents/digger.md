@@ -174,3 +174,7 @@ Ideas that address 2+ of these simultaneously are the strongest candidates.
 - At least one angle should challenge the obvious framing
 - Aim for 3-5 ideas per angle across depth layers
 - Ideas addressing 2+ root causes simultaneously should be flagged — they're the strongest
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

@@ -106,3 +106,7 @@ After generating TRIZ seeds, state the unanswered trade-off question for the Joh
 - State the trade-off question explicitly — Johns should engage with it
 - Aim for 12-18 total seeds
 - Record all seeds to `<workspace>/seeds/innovator.md` AND to the idea DB (phase=seed)
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

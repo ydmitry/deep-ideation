@@ -37,7 +37,7 @@ Every subagent prompt must include `references/output-rules.md` in its file list
 
 ## Phase Orchestration
 
-For each phase: spawn an Agent, pass it the files to read, the input from prior phases, and the problem statement. Collect the summary it returns. Pass file PATHS (not full content) between phases. Pass short summaries (2-5 sentences) for context.
+For each phase: spawn an Agent, pass it the files to read, the input from prior phases, and the problem statement. Collect the receipt it returns. Pass file PATHS (not full content) between phases. Subagents return a 3-line receipt per the **Return Contract** in `references/output-rules.md` — if a return exceeds 80 words or contains forbidden patterns (`100%`, `exceeds`, `comprehensive`), discard the excess and note the violation.
 
 **Every subagent also receives** (in addition to the files listed per phase):
 - `references/output-rules.md` — mandatory idea description and CSV column rules
@@ -181,7 +181,7 @@ Pass the `--ids` range to each parallel agent. The agent uses `slice` to read on
 ## Inter-Phase Data Rules
 
 1. **Pass file paths, not content.** Subagents read workspace files directly.
-2. **Pass short summaries** (2-5 sentences) between phases for context.
+2. **Expect a 3-line receipt** from each subagent per the **Return Contract** in `references/output-rules.md`. If the return exceeds 80 words or contains forbidden patterns (`100%`, `exceeds`, `comprehensive`), discard the excess and log a violation note.
 3. **Problem statement** goes to every subagent.
 4. **Mandatory output standards** (above) go to every subagent.
 5. **`$WORKSPACE` path** goes to every subagent — they use it for all `idea_db.py` commands.

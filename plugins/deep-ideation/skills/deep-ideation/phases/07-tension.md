@@ -58,3 +58,7 @@ python scripts/idea_db.py filter <workspace> triz_status resolves
 
 ## Anti-Patterns
 - **Don't skip Tension Analysis** — the Groan Zone is where the most surprising ideas emerge (warm zones still need bridging)
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

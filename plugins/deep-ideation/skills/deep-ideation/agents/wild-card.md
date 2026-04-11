@@ -45,3 +45,7 @@ What would these people do?
 - The weirder the better — Johns will ground them
 - Aim for 15-18 seeds
 - Record all seeds to `<workspace>/seeds/wild-card.md` AND to the idea DB (phase=seed)
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

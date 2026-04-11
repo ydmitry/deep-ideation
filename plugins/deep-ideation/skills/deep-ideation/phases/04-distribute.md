@@ -175,11 +175,7 @@ Save distribution plan to `$WORKSPACE/04-distribute.md`. Include: John count, zo
 
 ## Output Requirements
 
-Return a short summary to the orchestrator containing:
-1. **Triage results**: count of Hot / Warm / Cold / Discard seeds
-2. **John lineup**: count, temperature zones, second constraints (if any)
-3. **Distribution plan**: which seed batches go to which John
-4. **Cold seed injection plan**: which cold seeds injected into which Johns
+Return a 3-line receipt to the orchestrator per the **Return Contract** in `references/output-rules.md`.
 
 See `references/output-rules.md` for mandatory idea description and CSV column rules.
 

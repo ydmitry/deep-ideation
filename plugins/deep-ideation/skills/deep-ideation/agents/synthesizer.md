@@ -299,3 +299,7 @@ When writing ideas to the CSV (at any phase), always include:
 - `requires`: what must exist first
 
 Be honest about cons — they're as valuable as pros.
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

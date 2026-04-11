@@ -56,3 +56,7 @@ While running, tell the user: "Four specialists are generating raw seed ideas in
 - Don't let specialists elaborate seeds — one sentence only
 - Don't filter seeds before they reach Johns — that's the Triage phase
 - Don't give all specialists the same HMW emphasis — let them choose naturally
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

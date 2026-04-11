@@ -67,3 +67,7 @@ Appended to `$WORKSPACE/08-synthesize.md` as the final section before CONVERGE. 
 ## Anti-Patterns
 - **Don't skip the Brilliance Filter** — it's the last thing the user reads and often surfaces the session's best insight
 - **Don't inflate brilliance** — zero Brilliant ideas is a valid output. If nothing is structurally surprising, say so.
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

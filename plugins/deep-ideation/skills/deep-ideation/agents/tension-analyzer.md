@@ -74,3 +74,7 @@ Insight from I: [what this reveals] → potential Seed: [new idea]
 ## The Deepest Tension
 [The single most important contradiction nobody else noticed — this goes to the Synthesizer as the primary hybrid target]
 ```
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

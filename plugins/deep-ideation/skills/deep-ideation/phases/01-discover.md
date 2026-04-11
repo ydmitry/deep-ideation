@@ -83,13 +83,7 @@ AskUserQuestion:
 
 ## Output Requirements
 
-Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator containing:
-
-1. **Root causes** (3-4, one sentence each — must arrive at different root causes per angle)
-2. **HMW questions** (4-6, each pointing in a different direction)
-3. **TRIZ trade-off** ("Improving X worsens Y")
-4. **Depth-layered ideas** (surface/mid/root per angle)
-5. **Complexity mode** selected by the user
+Save to `$WORKSPACE/01-discover.md`. Return a 3-line receipt to the orchestrator per the **Return Contract** in `references/output-rules.md`.
 
 If Historian ran (DEEP mode), also save `$WORKSPACE/01-historian.md` with up to 15 cross-domain seeds.
 

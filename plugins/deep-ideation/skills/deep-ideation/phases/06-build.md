@@ -47,3 +47,7 @@ python scripts/idea_db.py filter <workspace> seed_usage hot
 - [N] hot seeds identified (used by 2+ Johns)
 - [N] cross-zone combinations created
 - [N] total enhanced ideas"
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

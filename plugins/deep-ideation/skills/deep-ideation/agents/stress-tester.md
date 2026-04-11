@@ -146,3 +146,7 @@ Save the full report to `$WORKSPACE/09.5-stress-test.md`.
 - **Don't attack feasibility** — ICE already scores ease and confidence. Attack assumptions and market fit.
 - **Don't invent attacks you can't defend** — if you can't articulate WHY the attack lands, it's not a real objection.
 - **Don't skip the strongest surviving objection** — this is often the most valuable output. The thing that almost killed the idea is the thing the team needs to monitor.
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

@@ -87,3 +87,7 @@ The Idea Menu is the most action-oriented output — format it clearly for the u
 
 ## Anti-Patterns
 - **Don't generate 48-hour experiments** — they sound actionable but nobody does them. Generate proof search queries instead. A 10-minute web search produces more validation than a hypothetical experiment design.
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

@@ -89,3 +89,7 @@ For each hot zone:
   forced into fake resolution.
 - Don't invent ideas from scratch. You synthesize from what the Johns
   produced. The Ratchet transforms, it doesn't generate.
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

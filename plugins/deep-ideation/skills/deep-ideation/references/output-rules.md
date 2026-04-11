@@ -36,3 +36,17 @@ These help the reader immediately assess each idea. Agents should fill them hone
 | **Quick Wins** | Ease ≥7, Confidence ≥6 | Do these first |
 | **Core Bets** | Impact ≥8, Confidence ≥5 | Main strategic plays |
 | **Moonshots** | Impact ≥9, Novelty ≥8 | Validate with proof searches first |
+
+## Return Contract
+
+Every phase and every subagent must return a receipt-style message under 80 words. No preamble. Three lines:
+
+```
+DONE. Wrote N items to <path>.
+Top signal: <one concrete observation>.
+Next phase needs: <one concrete handoff>.
+```
+
+**Forbidden in return summaries:** preamble, headings, bullets, emojis, quality self-assessment ("100% compliant", "exceeds minimum"), compliance claims, marketing language ("comprehensive", "robust"), restating the task, meta-commentary.
+
+Return the receipt. Nothing else.

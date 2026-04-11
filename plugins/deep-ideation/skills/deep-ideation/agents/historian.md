@@ -90,3 +90,7 @@ These are the strongest transfers — add them to the seed pool for specialists 
 - Max 15 ideas — quality over quantity
 - Always cite the source session so the user can trace back
 - TRIZ-compatible transfers are especially valuable — flag them prominently
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

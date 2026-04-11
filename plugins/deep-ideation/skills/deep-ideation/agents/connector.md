@@ -54,3 +54,7 @@ Work backwards from the ideal.
 - Aim for 10-15 seeds total
 - Focus on the MECHANISM, not surface similarity
 - Record all seeds to `<workspace>/seeds/connector.md` AND to the idea DB (phase=seed)
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

@@ -25,3 +25,7 @@ You are a seed factory. Your job: generate raw idea seeds as fast as possible us
 - Aim for 10-15 seeds
 - Speed over polish
 - Record all seeds to `<workspace>/seeds/provocateur.md` AND to the idea DB (phase=seed)
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

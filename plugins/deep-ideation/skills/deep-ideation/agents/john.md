@@ -129,3 +129,7 @@ Some seeds in your batch may be "cold" — ideas that were triaged as low-novelt
 - Your top 5 should span different modes and different source specialists
 - Total output: 10-15 well-developed ideas with chains
 - If a seed doesn't survive your zone's constraints, document WHY and what op you applied before dropping it
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

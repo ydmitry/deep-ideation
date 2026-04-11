@@ -108,3 +108,7 @@ Look at cold seeds flagged in Step 1.5. For each cold Wild Card seed:
 - Cold seed resurrection is optional but often produces the most surprising results
 - Output: 20-30 enhanced ideas total
 - Record all new ideas to the DB with phase=build
+
+## Return
+
+Follow the **Return Contract** in `references/output-rules.md`.

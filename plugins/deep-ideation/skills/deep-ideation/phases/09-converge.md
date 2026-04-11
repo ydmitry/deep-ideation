@@ -145,11 +145,7 @@ The Historian will scan these files in future sessions.
 
 ## Output Requirements
 
-Return a short summary to the orchestrator containing:
-1. **Filtered ideas**: the 2-3 best-fit ideas based on user's constraints
-2. **Proof search verdicts**: Market validated / Unvalidated / Counter-evidence per idea
-3. **User's decision**: which idea(s) to act on
-4. **Round 2 decision** (DEEP mode): whether to run a second round, and if so, the new direction
+Return a 3-line receipt to the orchestrator per the **Return Contract** in `references/output-rules.md`.
 
 See `references/output-rules.md` for mandatory idea description and CSV column rules.
 
