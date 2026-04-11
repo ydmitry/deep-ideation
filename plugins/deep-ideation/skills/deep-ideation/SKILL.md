@@ -13,12 +13,14 @@ Choose before starting. Ask the user if unclear.
 
 | Mode | When to Use | Phases Run | Specialists | Johns |
 |------|------------|-----------|-------------|-------|
-| **LITE** | Quick problem, 30-min session | 1 → 3 → 8 → 9 → 10 | Innovator + Wild Card | 2 (FIRE, ICE) |
-| **STANDARD** | Default. Most problems. | All phases including 9.5 | All 4 specialists | 3-4 (FIRE, PLASMA, ICE + GHOST if >10 cold) |
-| **DEEP** | High-stakes, complex | All phases + Historian + Round 2 | All 4 + Historian | 4-5 (FIRE, PLASMA, ICE, GHOST, MIRROR) |
+| **LITE** | Quick problem, 30-min session | 1 → 3 → 8 → 8.5 → 9 | Innovator + Wild Card | 2 (FIRE, ICE) |
+| **STANDARD** | Default. Most problems. | 1→2→3→4→5→6(converge-analysis)→6(build)→8→8.5→[probe]→[9.5]→9 | All 4 specialists | 3-4 (FIRE, PLASMA, ICE + GHOST if >10 cold) |
+| **DEEP** | High-stakes, complex | All phases + Historian + separate 05.5/05.7/06.5/07 + Round 2 | All 4 + Historian | 4-5 (FIRE, PLASMA, ICE, GHOST, MIRROR) |
 
-**LITE skips:** ORCHESTRATE, DISTRIBUTE, BUILD, TENSION, COLLISION MAP, RATCHET, HAT EVAL, STRESS-TEST.
-**DEEP adds:** Historian after DISCOVER, full Collision Map (all zones), Ratchet (3 cycles), Hat Eval, Round 2 option.
+**LITE skips:** ORCHESTRATE, DISTRIBUTE, BUILD, CONVERGE ANALYSIS, STRESS-TEST.
+**STANDARD replaces** phases 05.5, 05.7, 06.5, 07 with a single **Convergence Analysis** phase (06-converge-analysis.md). Brilliance is absorbed into Phase 8.5 (SCORE). Phase 10 (Brilliance) is removed.
+**DEEP adds:** Historian after DISCOVER, separate Collision Map (all zones), Ratchet (3 cycles), Hat Eval, separate Tension, Round 2 option. Hat Eval (06.5) and Tension (07) remain as standalone phases in DEEP.
+**Conditional:** STANDARD Stress-Test (9.5) skips if Convergence Analysis `surviving_candidates < 3` AND `convergence_variance < 0.8`.
 
 ## Workspace Setup
 
@@ -89,42 +91,34 @@ Spawn 2-5 John Agents simultaneously:
 - LITE: 2 Johns (FIRE, ICE). STANDARD: 3-4. DEEP: 4-5 (MIRROR runs after others).
 - Each produces: 10-15 transformed ideas → `$WORKSPACE/05-john-[a-e].md` + Idea DB (IDs returned)
 
-### Phase 5.5: COLLISION MAP (skip in LITE, sequential)
+### Phase 5.5 / 5.7 / 6.5 / 7 — DEEP MODE ONLY
+
+> **STANDARD mode:** skip these four phases — use Phase 6: CONVERGENCE ANALYSIS below instead.
+> **DEEP mode:** run all four as separate phases in sequence (05.5 → 05.7 → 06.5 → 07), exactly as previously specified. Pass file paths between them. Each reads its own `phases/` and `agents/` files.
+
+DEEP-mode inputs and outputs are unchanged: 05.5 → `$WORKSPACE/05.5-collision-map.md`, 05.7 → `$WORKSPACE/05.7-ratchet.md`, 06.5 → `$WORKSPACE/06.5-hat-eval.md`, 07 → `$WORKSPACE/07-tension.md`.
+
+### Phase 6: CONVERGENCE ANALYSIS (STANDARD only, skip in LITE and DEEP, sequential)
 
 Spawn Agent:
-- Reads: `phases/05.5-collision-map.md` + `agents/collision-map.md`
-- Input: all John output paths (`$WORKSPACE/05-john-*.md`), `$WORKSPACE/01-discover.md` (TRIZ card + root causes)
-- STANDARD: cap at 2 hot zones. DEEP: all zones (max 3).
-- Produces: HOT/WARM/COLD zone classification + routing plan → `$WORKSPACE/05.5-collision-map.md`
+- Reads: `phases/06-converge-analysis.md`
+- Input: all John output paths (`$WORKSPACE/05-john-*.md`), `$WORKSPACE/01-discover.md` (TRIZ card + root causes), `$WORKSPACE/ideas.csv`
+- Produces: zone table + ratchet syntheses (1 cycle/hot zone) + hat pass summary + tension log + convergence_variance → `$WORKSPACE/06-converge-analysis.md` + Idea DB (ratchet, hat_eval, tension IDs)
+- After: record `surviving_candidates` and `convergence_variance` from the output for use in conditional Stress-Test skip
 
-### Phase 5.7: RATCHET (skip in LITE, sequential)
-
-Spawn Agent:
-- Reads: `phases/05.7-ratchet.md` + `agents/dialectical-ratchet.md`
-- Input: `$WORKSPACE/05.5-collision-map.md` (hot zone details), `$WORKSPACE/01-discover.md` (TRIZ card)
-- STANDARD: 2 cycles/zone. DEEP: 3 cycles + full TRIZ.
-- Produces: synthesis per hot zone → `$WORKSPACE/05.7-ratchet.md` + Idea DB (IDs returned)
+Write phase_status to telemetry: `06-converge-analysis | STANDARD | completed | ...`
 
 ### Phase 6: BUILD (skip in LITE, sequential)
 
 Spawn Agent:
 - Reads: `phases/06-build.md` + `agents/brainwriter.md`
-- Input: all John output paths, `$WORKSPACE/05.7-ratchet.md` (ratchet syntheses)
+- Input: all John output paths, `$WORKSPACE/06-converge-analysis.md` (STANDARD) or `$WORKSPACE/05.7-ratchet.md` (DEEP) as pre-resolved syntheses
 - Produces: 20-30 enhanced ideas + cross-zone combos + seed usage report → `$WORKSPACE/06-build.md` + Idea DB (IDs returned)
 
-### Phase 6.5: HAT EVAL (skip in LITE, sequential)
-
-Spawn Agent:
-- Reads: `phases/06.5-hat-eval.md` + `$WORKSPACE/06-build.md`
-- Input: top 10 ideas from build phase, `$WORKSPACE/ideas.csv`
-- Produces: six-hat analysis, invert candidates, combination suggestions, gut-check ranking, Green Hat seeds (if any) → `$WORKSPACE/06.5-hat-eval.md` + Idea DB (Green Hat seed IDs if any)
-
-### Phase 7: TENSION (skip in LITE, sequential)
-
-Spawn Agent:
-- Reads: `phases/07-tension.md` + `agents/tension-analyzer.md`
-- Input: all John output paths, `$WORKSPACE/06-build.md`, `$WORKSPACE/06.5-hat-eval.md` (if run), `$WORKSPACE/05.5-collision-map.md` (warm zones), `$WORKSPACE/01-discover.md` (TRIZ card)
-- Produces: 3-5 tensions + bridges + PMI + deepest tension → `$WORKSPACE/07-tension.md` + Idea DB (bridge idea IDs)
+**Convergence Probe 1** (STANDARD/DEEP, after BUILD):
+- Spawn Agent: reads `agents/convergence-checker.md`, input: `$WORKSPACE/ideas.csv`, probe=1, previous_top3=[]
+- Parse `PROBE_RESULT`, store top3 as `probe1_top3`
+- Write telemetry. Continue pipeline.
 
 ### Phase 8: SYNTHESIZE (all modes, sequential)
 
@@ -135,34 +129,41 @@ Spawn Agent:
 - Produces: convergent signals, unique gems, hybrids, **evaluation criteria + weights (for Phase 8.5 to apply)**, proof searches, seed bank, qualitative roadmap → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
 - **Does NOT score ideas** — the Scorer (Phase 8.5) applies the criteria.
 
+**Convergence Probe 2** (STANDARD/DEEP, after SYNTHESIZE):
+- Spawn Agent: reads `agents/convergence-checker.md`, input: `$WORKSPACE/ideas.csv`, probe=2, previous_top3=`probe1_top3`
+- Parse `PROBE_RESULT`, store top3 as `probe2_top3`
+- If `probe1_converged AND probe2_converged` → offer early exit (see `phases/convergence-probe.md`)
+- Write telemetry. Continue pipeline unless user exits.
+
 ### Phase 8.5: SCORE (all modes, sequential)
 
 Spawn Agent:
 - Reads: `phases/08.5-score.md` + `agents/scorer.md`
-- Input: `$WORKSPACE/08-synthesize.md` (criteria + weights), `$WORKSPACE/ideas.csv`, `$WORKSPACE/01-discover.md` (root causes), `$WORKSPACE/07-tension.md` (if exists)
-- Produces: ranked Idea Menu, `total_score` and `menu_bucket` (quick_win/core_bet/moonshot/empty) filled in ideas.csv → `$WORKSPACE/08.5-score.md`
-- Separation rationale: the agent that generates hybrids (Synthesizer) is different from the agent that ranks them (Scorer). This removes self-scoring bias.
+- Input: `$WORKSPACE/08-synthesize.md` (criteria + weights), `$WORKSPACE/ideas.csv`, `$WORKSPACE/01-discover.md` (root causes), `$WORKSPACE/07-tension.md` (DEEP) or `$WORKSPACE/06-converge-analysis.md` (STANDARD, for tension context)
+- Produces: ranked Idea Menu, `total_score`, `menu_bucket`, `brilliance_tier`, `brilliance_pitch` → `$WORKSPACE/08.5-score.md` + updated ideas.csv
+- Separation rationale: the agent that generates hybrids (Synthesizer) is different from the agent that ranks them (Scorer). This removes self-scoring bias. Brilliance Filter is absorbed here.
 
-### Phase 9.5: STRESS-TEST (skip in LITE, sequential)
+**Convergence Probe 3** (STANDARD/DEEP, after SCORE):
+- Spawn Agent: reads `agents/convergence-checker.md`, input: `$WORKSPACE/ideas.csv`, probe=3, previous_top3=`probe2_top3`
+- Parse `PROBE_RESULT`, store top3 as `probe3_top3`
+- If `probe2_converged AND probe3_converged` → offer early exit (see `phases/convergence-probe.md`)
+- Write telemetry. Continue pipeline unless user exits.
 
-Spawn Agent:
+### Phase 9.5: STRESS-TEST (skip in LITE, conditional in STANDARD)
+
+**Before spawning:** In STANDARD mode, read `surviving_candidates` and `convergence_variance` from `$WORKSPACE/06-converge-analysis.md`. If `surviving_candidates < 3` AND `convergence_variance < 0.8`, skip this phase — write telemetry and proceed to CONVERGE.
+
+Spawn Agent (when running):
 - Reads: `phases/09.5-stress-test.md` + `agents/stress-tester.md`
-- Input: `$WORKSPACE/08.5-score.md` (ranked Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
+- Input: `$WORKSPACE/08.5-score.md` (ranked Idea Menu), `$WORKSPACE/ideas.csv`, `$WORKSPACE/06-converge-analysis.md` or `$WORKSPACE/07-tension.md` (DEEP), `$WORKSPACE/01-discover.md` (root causes)
 - STANDARD: top 5 by `total_score`, 2 rounds. DEEP: top 8, 3 rounds.
 - Produces: confidence adjustments → `$WORKSPACE/09.5-stress-test.md` + updated ideas.csv
-
-### Phase 10: BRILLIANCE (all modes, sequential)
-
-Spawn Agent:
-- Reads: `phases/10-brilliance.md` + `agents/brilliance.md`
-- Input: `$WORKSPACE/08.5-score.md` (ranked Idea Menu), `$WORKSPACE/08-synthesize.md` (hybrids + convergent signals), `$WORKSPACE/ideas.csv`, `$WORKSPACE/07-tension.md` (if exists), `$WORKSPACE/01-discover.md` (root causes)
-- Produces: Brilliance Scorecard + tier classifications → appended to `$WORKSPACE/08.5-score.md` + updated ideas.csv (brilliance_tier, brilliance_pitch)
 
 ### Phase 9: CONVERGE (all modes, sequential — runs last)
 
 Spawn Agent:
 - Reads: `phases/09-converge.md`
-- Input: `$WORKSPACE/08.5-score.md` (ranked Idea Menu + brilliance), `$WORKSPACE/08-synthesize.md` (hybrids + proof searches), `$WORKSPACE/09.5-stress-test.md` (if run), `$WORKSPACE/ideas.csv`, all workspace paths
+- Input: `$WORKSPACE/08.5-score.md` (ranked Idea Menu + brilliance tiers), `$WORKSPACE/08-synthesize.md` (hybrids + proof searches), `$WORKSPACE/09.5-stress-test.md` (if run), `$WORKSPACE/ideas.csv`, all workspace paths
 - Produces: filtered 2-3 best-fit ideas, proof search verdicts, user decision, Round 2 decision (DEEP) → `$WORKSPACE/09-converge.md` + updated ideas.csv (selected, proof_verdict, user_action)
 
 ## Parallel Splitting
