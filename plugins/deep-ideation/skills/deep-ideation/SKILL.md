@@ -47,17 +47,23 @@ For each phase: spawn an Agent, pass it the files to read, the input from prior 
 
 ### Phase 1: DISCOVER (all modes, sequential)
 
-Spawn Agent:
-- Reads: `phases/01-discover.md` + `agents/digger.md`
-- Input: problem statement, user's preferred angles (if any)
-- If DEEP: spawn a second Agent reading `agents/historian.md` after Digger completes
-- Produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
-- After: present root causes + HMW to user for confirmation before proceeding
+Spawn two Agents in parallel:
+1. **Digger** — Reads: `phases/01-discover.md` + `agents/digger.md` + `$WORKSPACE/00-context.md` (once Context Scout completes)
+2. **Context Scout** — Reads: `agents/context-scout.md`; Input: problem statement, `$WORKSPACE` path; Produces: `$WORKSPACE/00-context.md`
+   - Mandatory: STANDARD, DEEP, or any corporate/strategic problem
+   - Skip (write stub): LITE on personal problems
+
+Wait for Context Scout to finish before passing `$WORKSPACE/00-context.md` to Digger. If Context Scout fails, proceed with a stub.
+
+- Digger produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
+- After: present root causes + HMW (and a one-line context summary if `context_facts_count > 0`) to user for confirmation before proceeding
+- If DEEP: spawn a third Agent reading `agents/historian.md` after Digger completes → `$WORKSPACE/01-historian.md`
+- **Telemetry:** read `context_facts_count` from `$WORKSPACE/00-context.md` header and include in session summary
 
 ### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 
 Spawn Agent:
-- Reads: `phases/02-orchestrate.md` + `$WORKSPACE/01-discover.md`
+- Reads: `phases/02-orchestrate.md` + `$WORKSPACE/01-discover.md` + `$WORKSPACE/00-context.md`
 - Input: discover summary (root causes, HMW questions, TRIZ trade-off)
 - Produces: problem type, specialist emphasis, IFR, distribution plan → `$WORKSPACE/02-orchestrate.md`
 
@@ -67,7 +73,7 @@ Spawn 2-4 Agents simultaneously:
 - Each reads: `phases/03-seed.md` + `agents/<specialist>.md`
 - LITE: Innovator + Wild Card (2 agents)
 - STANDARD/DEEP: Provocateur + Innovator + Wild Card + Connector (4 agents)
-- Input: problem brief, root causes, HMW questions, IFR, TRIZ trade-off
+- Input: problem brief, root causes, HMW questions, IFR, TRIZ trade-off, `$WORKSPACE/00-context.md` path
 - If DEEP: also pass `$WORKSPACE/01-historian.md` (historical seeds)
 - Each produces: 10-18 seeds → `$WORKSPACE/seeds/<agent-name>.md` + Idea DB (IDs returned)
 
@@ -195,7 +201,8 @@ Pass the `--ids` range to each parallel agent. The agent uses `slice` to read on
 4. **Mandatory output standards** (above) go to every subagent.
 5. **`$WORKSPACE` path** goes to every subagent — they use it for all `idea_db.py` commands.
 6. **`references/idea-db.md`** path goes to every subagent that writes or reads ideas (Phases 3-10). The CSV is the shared state — agents read and write `$WORKSPACE/ideas.csv` via `python scripts/idea_db.py` commands documented in each phase/agent file.
-7. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
+7. **`$WORKSPACE/00-context.md`** path goes to every subagent in Phases 1–9. Agents check `context_facts_count` to decide whether grounding is available.
+8. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
 
 ## The Idea Database
 

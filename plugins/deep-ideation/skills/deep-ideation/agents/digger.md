@@ -12,9 +12,20 @@ Previous versions ran 2-3 "Why?" chains that converged on a single root cause. T
 
 Derive the angles from the problem AND the user:
 
-### Step 0: Ask the User for Angles
+### Step 0: Read Context Facts (if available)
 
-Before running any chains, PROPOSE angles and let the user adjust:
+Before proposing angles, check whether `$WORKSPACE/00-context.md` exists and has `context_facts_count > 0`.
+
+If it does:
+- Read the facts. Let them inform your angle proposals — if the context reveals a competitor dynamic, a pricing gap, or a regulatory constraint, make sure at least one angle targets it.
+- In the TRIZ trade-off step (Step 4 below), ground the contradiction in at least one cited fact where applicable. Note which fact you used with its URL.
+- Do NOT add generic "market" angles just because context exists — only add angles the facts actually support.
+
+If the file is a stub (`context_facts_count: 0`): proceed without context grounding.
+
+### Step 1: Ask the User for Angles
+
+Before running any chains, PROPOSE angles and let the user adjust. If context facts surfaced a clear market or structural angle, include it in your proposal:
 
 ```
 AskUserQuestion:

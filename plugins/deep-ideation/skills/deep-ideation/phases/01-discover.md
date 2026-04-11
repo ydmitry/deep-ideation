@@ -29,7 +29,17 @@ AskUserQuestion:
     - "DEEP — maximum depth"
 ```
 
-## Step 3: Run the Digger
+## Step 3: Run Context Scout + Digger in Parallel
+
+**Context Scout** (`agents/context-scout.md`) runs simultaneously with the Digger.
+
+- Mandatory in STANDARD and DEEP modes, or any corporate/strategic problem.
+- LITE mode on personal problems: skip (write stub).
+- Output saved to `$WORKSPACE/00-context.md`.
+
+Wait for both to complete before Step 4.
+
+## Step 4: Run the Digger
 
 See `agents/digger.md`.
 
@@ -43,7 +53,7 @@ The Digger:
 
 Output saved to `$WORKSPACE/01-discover.md`.
 
-## Step 4: Run the Historian (DEEP mode only)
+## Step 5: Run the Historian (DEEP mode only)
 
 See `agents/historian.md`.
 
@@ -56,7 +66,7 @@ The Historian resurfaces relevant ideas from previous sessions and adds up to 15
 
 Output saved to `$WORKSPACE/01-historian.md`.
 
-## Step 5: Confirm and Launch
+## Step 6: Confirm and Launch
 
 ```
 AskUserQuestion:
@@ -90,6 +100,7 @@ Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator 
 3. **TRIZ trade-off** ("Improving X worsens Y")
 4. **Depth-layered ideas** (surface/mid/root per angle)
 5. **Complexity mode** selected by the user
+6. **context_facts_count** — the count from `$WORKSPACE/00-context.md` header (0 if stub)
 
 If Historian ran (DEEP mode), also save `$WORKSPACE/01-historian.md` with up to 15 cross-domain seeds.
 
@@ -103,6 +114,7 @@ After DISCOVER, every agent receives:
 - **HMW questions** (4-6, each pointing in a different direction)
 - **TRIZ trade-off** ("Improving X worsens Y")
 - **IFR** (Ideal Final Result, set in ORCHESTRATE)
+- **`$WORKSPACE/00-context.md`** path — cited real-world facts (pass to all agents; stub if not applicable)
 - **Historical seeds** (if Historian ran — DEEP mode)
 
 ## Anti-Patterns
