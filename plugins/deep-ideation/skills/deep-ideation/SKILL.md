@@ -51,7 +51,7 @@ Phase 1 runs two agents in sequence, then optionally a third:
 
 1. **Context Scout** (first) — Reads: `agents/context-scout.md`; Input: problem statement, `$WORKSPACE` path; Produces: `$WORKSPACE/00-context.md` with citable facts tagged for confidence and (best-effort) adversarial evidence. Runs in **all modes**. Writes a stub only when the problem is truly ungroundable. Adds ~1–3 min of web-search wall-clock even in LITE mode.
 2. **Digger** (second) — Reads: `phases/01-discover.md` + `agents/digger.md` + `$WORKSPACE/00-context.md`. Digger's Step 0 consumes the Scout's output before proposing angles.
-3. **Historian** (DEEP mode only, after Digger) — Reads: `agents/historian.md` + `$WORKSPACE/00-context.md`. Historical seeds are subject to the same grounding as new seeds. → `$WORKSPACE/01-historian.md`
+3. **Historian** (DEEP mode only, after Digger) — Reads: `agents/historian.md`. → `$WORKSPACE/01-historian.md`. Any historical seeds it surfaces inherit grounding downstream when Phase 3 specialists embed cited facts into their batches.
 
 If Context Scout fails entirely, write a one-line stub to `$WORKSPACE/00-context.md` noting the session is operating on priors, then proceed to Digger normally.
 
@@ -64,7 +64,7 @@ If Context Scout fails entirely, write a one-line stub to `$WORKSPACE/00-context
 ### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 
 Spawn Agent:
-- Reads: `phases/02-orchestrate.md` + `$WORKSPACE/01-discover.md` + `$WORKSPACE/00-context.md`
+- Reads: `phases/02-orchestrate.md` + `$WORKSPACE/01-discover.md`
 - Input: discover summary (root causes, HMW questions, TRIZ trade-off)
 - Produces: problem type, specialist emphasis, IFR, distribution plan → `$WORKSPACE/02-orchestrate.md`
 
@@ -202,7 +202,7 @@ Pass the `--ids` range to each parallel agent. The agent uses `slice` to read on
 4. **Mandatory output standards** (above) go to every subagent.
 5. **`$WORKSPACE` path** goes to every subagent — they use it for all `idea_db.py` commands.
 6. **`references/idea-db.md`** path goes to every subagent that writes or reads ideas (Phases 3-10). The CSV is the shared state — agents read and write `$WORKSPACE/ideas.csv` via `python scripts/idea_db.py` commands documented in each phase/agent file.
-7. **`$WORKSPACE/00-context.md`** path goes to every subagent in Phases 1–9. Agents check `context_facts_count` to decide whether grounding is available.
+7. **`$WORKSPACE/00-context.md`** is the shared grounding artifact written by the Context Scout in Phase 1. The primary consumers are **Digger** (Phase 1), **Phase 3 specialists**, and **Converge** (Phase 9) — each has explicit instructions on how to weight and cite facts. Other phases may access the file if they need grounding, but no other phase is required to branch on it. Consumers check `context_facts_count` to decide whether grounding is available.
 8. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
 
 ## The Idea Database
