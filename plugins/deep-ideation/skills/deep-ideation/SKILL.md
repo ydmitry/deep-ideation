@@ -23,9 +23,30 @@ Choose before starting. Ask the user if unclear.
 ## Workspace Setup
 
 ```bash
-WORKSPACE="results/$(date +%Y%m%d-%H%M%S)-$(echo "$PROBLEM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | head -c 30)"
+# Pick the first writable base directory available
+BASE=""
+for candidate in \
+    "./results" \
+    "$HOME/deep-ideation-results" \
+    "/tmp/deep-ideation-results" \
+    "/sessions/$USER/deep-ideation-results"; do
+    if mkdir -p "$candidate" 2>/dev/null; then
+        BASE="$candidate"
+        break
+    fi
+done
+
+if [ -z "$BASE" ]; then
+    echo "ERROR: Could not find a writable location for the workspace." >&2
+    echo "Tried: ./results, \$HOME/deep-ideation-results, /tmp/deep-ideation-results" >&2
+    exit 1
+fi
+
+SLUG=$(echo "$PROBLEM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | head -c 30)
+WORKSPACE="$BASE/$(date +%Y%m%d-%H%M%S)-$SLUG"
 mkdir -p "$WORKSPACE/seeds"
 python scripts/idea_db.py init "$WORKSPACE"
+echo "Workspace: $WORKSPACE"
 ```
 
 ## Mandatory Output Standards
