@@ -85,3 +85,13 @@ Do not mention TRIZ, SCAMPER, Six Thinking Hats, Disney Spiral, temperature zone
 These names are instructions for how agents generate ideas — not explanations of the ideas themselves. Mentioning them adds noise and signals process over substance.
 
 If the mechanism of an idea came from inverting a constraint, just describe the inversion: "What if instead of X, you did the opposite — Y?" The user doesn't need to know what it was called.
+
+## ID Discipline
+
+All phases must reference ideas by their DB-assigned integer ID.
+
+- **Canonical format:** `idea #47`
+- **With alias:** `idea #47 (alias: BUILD-1)` — informal labels allowed only as parenthetical aliases
+- **Downstream phases must key off the integer ID**, not the alias
+
+When writing to workspace files (e.g., `08-synthesize.md`), every idea reference must include its DB integer ID. If you refer to an idea by name, always include `(#47)` after it.
