@@ -6,7 +6,7 @@ You do NOT attack feasibility — the Scorer's `feasibility` criterion already h
 
 ## What You Receive
 
-- Top 8-10 ideas from the Idea Menu (after SYNTHESIZE and CONVERGE)
+- Top 8-10 ideas from the Idea Menu (after SYNTHESIZE and CONVERGE), sorted by `composite_score`
 - Tension analysis from `$WORKSPACE/07-tension.md` (if exists) — tells you which contradictions the team already found
 - Digger's root causes from `$WORKSPACE/01-discover.md` — tells you what the problem actually is
 
@@ -36,25 +36,24 @@ Each round, pick the most dangerous attack type that applies:
 
 ### Evaluating Each Attack
 
-After each attack, immediately score the outcome:
+After each attack, score the outcome using **asymmetric deltas** — penalties are larger than bonuses to preserve discrimination between strong and weak ideas:
 
-| Outcome | Score | When to Use |
-|---------|-------|-------------|
-| **Survived cleanly** | +1.5 | The idea has a genuine response. Attack clearly failed. |
-| **Survived but needed modification** | +0.5 | The idea survives only if changed. Record the modification required. |
-| **Fatal wound** | -2.0 | The attack exposed a problem with no good answer. |
-| **Attacker couldn't find good objection** | +1.0 | You tried your best but couldn't land a real attack. The idea is more robust than expected. |
+| Outcome | Multiplier delta | When to Use |
+|---------|-----------------|-------------|
+| **Survived cleanly** | +0.08 | The idea has a genuine response. Attack clearly failed. |
+| **Survived but needed modification** | +0.03 | The idea survives only if changed. Record the modification required. |
+| **Fatal wound** | **−0.15** | The attack exposed a problem with no good answer. Asymmetric penalty: bigger than any bonus. |
+| **Attacker couldn't find good objection** | +0.05 | You tried your best but couldn't land a real attack. The idea is more robust than expected. |
 
-## Confidence Score
+## Stress Multiplier
 
-Each idea starts at **5.0** (neutral — neither confident nor skeptical).
+Each idea starts with `stress_multiplier = 1.0`.
 
-After all rounds: `confidence_adjusted = 5.0 + sum(round scores)`
+After all rounds: `stress_multiplier = max(0.50, min(1.30, 1.0 + sum(round deltas)))`
 
-Cap at 9.0 (maximum), floor at 1.0 (minimum).
+The multiplier feeds directly into `composite_score = total_score * stress_multiplier * brilliance_multiplier`. A multiplier of 0.70 after two fatal wounds meaningfully separates a flawed idea from a resilient one scoring 1.30.
 
-A score of 7+ means "battle-tested — survived real pressure."
-A score below 3 means "fundamental problem exposed — reconsider before betting on this."
+For each idea, also write one line to `score_notes` summarizing what happened and why the multiplier landed where it did. Example: `"ST: fatal wound on distribution path (−0.15), survived hidden-assumption round (+0.03) → 0.88"`.
 
 ## After All Rounds
 
@@ -67,26 +66,33 @@ If an idea survived only by modifying itself, document the modification clearly.
 Add these columns to `$WORKSPACE/ideas.csv` before starting:
 
 ```bash
-python scripts/idea_db.py add_column <workspace> confidence_raw --default "5.0"
-python scripts/idea_db.py add_column <workspace> confidence_adjusted
-python scripts/idea_db.py add_column <workspace> stress_rounds
-python scripts/idea_db.py add_column <workspace> stress_attacks
-python scripts/idea_db.py add_column <workspace> stress_results
-python scripts/idea_db.py add_column <workspace> stress_strongest_objection
-python scripts/idea_db.py add_column <workspace> stress_modifications
+python scripts/idea_db.py add_column <workspace> stress_rounds --default ""
+python scripts/idea_db.py add_column <workspace> stress_attacks --default ""
+python scripts/idea_db.py add_column <workspace> stress_results --default ""
+python scripts/idea_db.py add_column <workspace> stress_strongest_objection --default ""
+python scripts/idea_db.py add_column <workspace> stress_modifications --default ""
 ```
 
-After testing each idea, set values:
+After testing each idea, update `stress_multiplier` and `score_notes`, then recompute `composite_score`:
+
 ```bash
-python scripts/idea_db.py set <workspace> <id> confidence_adjusted 7.5
+python scripts/idea_db.py set <workspace> <id> stress_multiplier 0.88
 python scripts/idea_db.py set <workspace> <id> stress_rounds 2
 python scripts/idea_db.py set <workspace> <id> stress_attacks "Market Size;Hidden Assumption"
-python scripts/idea_db.py set <workspace> <id> stress_results "survived_cleanly;survived_modified"
+python scripts/idea_db.py set <workspace> <id> stress_results "fatal_wound;survived_modified"
 python scripts/idea_db.py set <workspace> <id> stress_strongest_objection "Distribution path unclear — no existing channel owns this buyer"
 python scripts/idea_db.py set <workspace> <id> stress_modifications "Requires partnership with HR platform to reach buyers; stand-alone GTM doesn't work"
+python scripts/idea_db.py set <workspace> <id> score_notes "ST: fatal wound on distribution (−0.15), survived hidden-assumption (+0.03) → 0.88"
 ```
 
 Use semicolons to separate multiple values in list columns.
+
+After all ideas are updated, recompute composite scores and Z-scores for the full cohort:
+
+```bash
+python scripts/idea_db.py compute_composite <workspace>
+python scripts/idea_db.py compute_zscores <workspace> --source composite_score --target z_score
+```
 
 ## Output Format
 
@@ -104,23 +110,23 @@ Save the full report to `$WORKSPACE/09.5-stress-test.md`.
 
 #### [Idea Name] — ID #[N]
 
-**Starting Confidence:** 5.0
+**Starting multiplier:** 1.00
 
 **Round 1**
 - **Attack type:** [type]
 - **Attack:** [the specific objection, 2-4 sentences]
 - **Response:** [how the idea answers it, or why it can't]
 - **Outcome:** Survived cleanly / Survived modified / Fatal wound / No good objection
-- **Score delta:** +1.5 / +0.5 / -2.0 / +1.0
+- **Delta:** +0.08 / +0.03 / −0.15 / +0.05
 
 **Round 2** *(if applicable)*
 - **Attack type:** [type]
 - **Attack:** [objection]
 - **Response:** [answer or failure to answer]
 - **Outcome:** [outcome]
-- **Score delta:** [delta]
+- **Delta:** [delta]
 
-**Adjusted Confidence:** [5.0 + sum]
+**Stress multiplier:** 1.0 + [sum] = [result] (capped [0.50–1.30])
 **Strongest surviving objection:** [the best attack that didn't kill it]
 **Modifications required:** [what changed, or "None"]
 
@@ -128,9 +134,9 @@ Save the full report to `$WORKSPACE/09.5-stress-test.md`.
 
 ### Summary Table
 
-| Idea | Confidence Raw | Confidence Adjusted | Rounds | Result |
-|------|---------------|---------------------|--------|--------|
-| [Name] | 5.0 | [score] | [N] | Battle-tested / Wounded / Fatally flawed |
+| Idea | Stress Multiplier | Rounds | Result |
+|------|------------------|--------|--------|
+| [Name] | [multiplier] | [N] | Resilient / Weakened / Fatally flawed |
 
 ---
 
@@ -146,3 +152,4 @@ Save the full report to `$WORKSPACE/09.5-stress-test.md`.
 - **Don't attack feasibility** — the Scorer's `feasibility` criterion already captures that. Attack assumptions and market fit.
 - **Don't invent attacks you can't defend** — if you can't articulate WHY the attack lands, it's not a real objection.
 - **Don't skip the strongest surviving objection** — this is often the most valuable output. The thing that almost killed the idea is the thing the team needs to monitor.
+- **Don't overwrite `total_score`** — you only mutate `stress_multiplier` and `score_notes`. The Scorer's ranking stays intact and inspectable.

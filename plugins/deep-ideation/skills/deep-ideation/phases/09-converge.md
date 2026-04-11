@@ -84,6 +84,28 @@ AskUserQuestion:
 5. Skip Brainwriter + Tension Analyzer (faster)
 6. Synthesizer produces merged output
 
+## Ranking in Converge
+
+Sort by `composite_score` (not `total_score`). This is the single authoritative ranking — it already incorporates the Scorer's weighted average, the Stress-Tester's resilience multiplier, and the Brilliance multiplier. No manual reconciliation of three competing lists is needed.
+
+Show Z-scores alongside raw scores so the user can see where each idea sits relative to the cohort distribution:
+
+```bash
+# Primary ranking — sort by composite_score
+python scripts/idea_db.py top <workspace> composite_score --n 10
+
+# Export full ranked table with all score dimensions visible
+python scripts/idea_db.py export_md <workspace> \
+  --columns "id,name,total_score,z_score,stress_multiplier,brilliance_multiplier,composite_score,menu_bucket" \
+  --sort composite_score --desc
+```
+
+Original per-dimension scores (e.g., `feasibility`, `novelty`) and `evidence_ref` remain in the CSV and are inspectable at any time:
+
+```bash
+python scripts/idea_db.py show <workspace> --columns "id,name,feasibility,novelty,[session-criteria],evidence_ref,score_notes"
+```
+
 ## Recording Decisions in CSV
 
 Before saving, run `describe` to see available columns, then record the user's decisions:
