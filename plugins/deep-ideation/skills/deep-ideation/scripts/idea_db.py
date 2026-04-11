@@ -24,6 +24,7 @@ Usage:
     python idea_db.py slice <workspace> --ids 1-50          # Get ideas by ID range (for parallel splits)
     python idea_db.py slice <workspace> --offset 0 --limit 50  # Get ideas by offset+limit
     python idea_db.py slice <workspace> --phase build --ids 60-80  # Filter by phase, then slice
+    python idea_db.py mark_favorites <workspace> --ids "1,3,7"     # Set user_favorites=true for given IDs (Phase 5.8)
 """
 
 import argparse
@@ -587,6 +588,41 @@ def cmd_unscored(args):
         print(f"  #{row['id']} {row['name']} (phase: {row.get('phase', '?')}, agent: {row.get('source_agent', '?')})")
 
 
+def cmd_mark_favorites(args):
+    """Mark specific ideas as user favorites (Phase 5.8 Taste Check).
+
+    Ensures the user_favorites column exists, then sets user_favorites="true"
+    for each idea ID in the provided comma-separated list.
+
+    Usage:
+        idea_db.py mark_favorites <workspace> --ids "1,3,7"
+    """
+    columns, rows = read_db(args.workspace)
+
+    # Ensure user_favorites column exists (idempotent)
+    if "user_favorites" not in columns:
+        columns.append("user_favorites")
+        for row in rows:
+            row["user_favorites"] = ""
+
+    ids_to_mark = {s.strip() for s in args.ids.split(",") if s.strip()}
+    id_map = {row["id"]: row for row in rows}
+
+    marked = []
+    missing = []
+    for idea_id in ids_to_mark:
+        if idea_id in id_map:
+            id_map[idea_id]["user_favorites"] = "true"
+            marked.append(idea_id)
+        else:
+            missing.append(idea_id)
+
+    write_db(args.workspace, columns, rows)
+    print(f"Marked {len(marked)} ideas as favorites: {', '.join(f'#{i}' for i in sorted(marked, key=int))}")
+    if missing:
+        print(f"Warning: IDs not found: {', '.join(missing)}", file=sys.stderr)
+
+
 def cmd_export_md(args):
     columns, rows = read_db(args.workspace)
     if args.columns:
@@ -735,6 +771,11 @@ def main():
     p.add_argument("workspace")
     p.add_argument("column")
 
+    # mark_favorites
+    p = subparsers.add_parser("mark_favorites")
+    p.add_argument("workspace")
+    p.add_argument("--ids", required=True, help="Comma-separated idea IDs to mark as favorites, e.g. '1,3,7'")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -748,6 +789,7 @@ def main():
         "add_criteria": cmd_add_criteria, "compute": cmd_compute,
         "multi_filter": cmd_multi_filter, "size": cmd_size, "slice": cmd_slice,
         "describe": cmd_describe, "unscored": cmd_unscored,
+        "mark_favorites": cmd_mark_favorites,
     }
 
     # All commands except init acquire a file lock so parallel agents

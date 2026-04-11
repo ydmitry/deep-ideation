@@ -3,9 +3,15 @@ name: deep-ideation
 description: "Multi-agent parallel brainstorming at maximum creative depth. Specialists generate high-volume seed ideas; generalist Johns transform them through Disney spirals using an operations toolkit (SCAMPER, TRIZ Contradiction Engine, Six Hats, Reverse Brainstorming, Synectics). Use whenever the user wants to brainstorm with maximum depth, explore a problem from many angles simultaneously, generate a large volume of diverse ideas, or asks for 'deep ideation', 'multi-agent brainstorm', 'parallel brainstorming', 'swarm brainstorm'. Also use when the user says they want 'lots of ideas', 'explore every angle', or 'think about this from every perspective'."
 ---
 
-# Deep Ideation v8 — Orchestrator Architecture
+# Deep Ideation v9 — Orchestrator Architecture
 
 You are a lightweight orchestrator. You do NOT read phase files or agent files yourself. You spawn a fresh subagent for each phase — each reads only its own instructions and produces output to the workspace.
+
+## Flags
+
+| Flag | Effect |
+|------|--------|
+| `--no-checkpoints` | Skip all three user checkpoint gates silently. Log skips to workspace. Use for fully autonomous runs. |
 
 ## Complexity Modes
 
@@ -19,6 +25,14 @@ Choose before starting. Ask the user if unclear.
 
 **LITE skips:** ORCHESTRATE, DISTRIBUTE, BUILD, TENSION, COLLISION MAP, RATCHET, HAT EVAL, STRESS-TEST.
 **DEEP adds:** Historian after DISCOVER, full Collision Map (all zones), Ratchet (3 cycles), Hat Eval, Round 2 option.
+
+**Checkpoint behavior by mode:**
+
+| Checkpoint | LITE | STANDARD | DEEP | `--no-checkpoints` |
+|-----------|------|----------|------|--------------------|
+| Framing Gate (after Phase 1) | Shown, skippable | Required | Required | Skipped silently |
+| Taste Check (Phase 5.8) | Skipped | Shown, required | Shown, required | Skipped silently |
+| Criteria Gate (after Phase 8a) | Skipped | Required | Required | Skipped silently |
 
 ## Workspace Setup
 
@@ -52,7 +66,43 @@ Spawn Agent:
 - Input: problem statement, user's preferred angles (if any)
 - If DEEP: spawn a second Agent reading `agents/historian.md` after Digger completes
 - Produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
-- After: present root causes + HMW to user for confirmation before proceeding
+
+### Framing Gate (orchestrator, between Phase 1 and Phase 2)
+
+**Do NOT spawn a subagent.** The orchestrator reads `$WORKSPACE/01-discover.md` and calls `AskUserQuestion` directly.
+
+**Skip if:** `--no-checkpoints` flag is set. In LITE mode, include "Skip" as an option.
+
+```
+AskUserQuestion:
+  question: "Root causes found:
+    - [Root Cause A]
+    - [Root Cause B]
+    - [Root Cause C]
+
+    Core contradiction: Improving [X] worsens [Y]
+
+    HMW questions:
+    1. [HMW 1]
+    2. [HMW 2]
+    3. [HMW 3]
+    4. [HMW 4]
+
+    Confirm the framing to launch the swarm."
+  header: "Confirm Framing"
+  options:
+    - "Yes, launch the swarm"
+    - "Adjust the root causes"
+    - "Change the TRIZ contradiction"
+    - "Reframe the problem entirely"
+    - "Skip — use this framing as-is"   ← LITE mode only
+```
+
+**If user selects "Adjust root causes" or "Change TRIZ contradiction":** Update `$WORKSPACE/01-discover.md` with the corrections, then continue to Phase 2.
+
+**If user selects "Reframe the problem entirely":** Re-run Phase 1 with the new problem statement before continuing.
+
+Log checkpoint result to workspace: `Framing Gate: confirmed / adjusted / reframed / skipped`.
 
 ### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 
@@ -105,6 +155,21 @@ Spawn Agent:
 - STANDARD: 2 cycles/zone. DEEP: 3 cycles + full TRIZ.
 - Produces: synthesis per hot zone → `$WORKSPACE/05.7-ratchet.md` + Idea DB (IDs returned)
 
+### Phase 5.8: TASTE CHECK (skip in LITE, orchestrator gate)
+
+**Do NOT spawn a subagent.** The orchestrator reads the idea DB and calls `AskUserQuestion` directly. See `phases/05.8-taste-check.md` for the full procedure.
+
+**Skip if:** `--no-checkpoints` is set, OR mode is LITE.
+
+Quick steps:
+1. Read top 10 transform-phase ideas by diversity: `python scripts/idea_db.py show <ws> --columns "id,name,description,temperature_zone,tag"`
+2. Pick 10 spanning multiple zones and tags.
+3. Present via `AskUserQuestion` — user picks any that resonate.
+4. Record favorites: `python scripts/idea_db.py add_column <ws> user_favorites --default ""` then `python scripts/idea_db.py mark_favorites <ws> --ids "1,3,7"`
+5. Save results to `$WORKSPACE/05.8-taste-check.md`.
+
+Log checkpoint result: `Taste Check: N favorites recorded / no favorites / skipped`.
+
 ### Phase 6: BUILD (skip in LITE, sequential)
 
 Spawn Agent:
@@ -126,20 +191,61 @@ Spawn Agent:
 - Input: all John output paths, `$WORKSPACE/06-build.md`, `$WORKSPACE/06.5-hat-eval.md` (if run), `$WORKSPACE/05.5-collision-map.md` (warm zones), `$WORKSPACE/01-discover.md` (TRIZ card)
 - Produces: 3-5 tensions + bridges + PMI + deepest tension → `$WORKSPACE/07-tension.md` + Idea DB (bridge idea IDs)
 
-### Phase 8: SYNTHESIZE (all modes, sequential)
+### Phase 8a: CRITERIA (all modes, sequential)
 
 Spawn Agent:
-- Reads: `phases/08-synthesize.md` + `agents/synthesizer.md`
+- Reads: `phases/08a-criteria.md` + `agents/synthesizer.md`
 - Input: ALL workspace file paths, `$WORKSPACE/ideas.csv`
-- LITE: hybrids + criteria only (no proof searches). STANDARD/DEEP: full output + web validation.
-- Produces: convergent signals, unique gems, hybrids, **evaluation criteria + weights (for Phase 8.5 to apply)**, proof searches, seed bank, qualitative roadmap → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
+- Produces: 5-7 evaluation criteria + weights summing to 100% → `$WORKSPACE/criteria.json`
+- **Does NOT produce hybrids** — that is Phase 8b's job.
+
+### Criteria Gate (orchestrator, between Phase 8a and Phase 8b)
+
+**Do NOT spawn a subagent.** The orchestrator reads `$WORKSPACE/criteria.json` and calls `AskUserQuestion` directly.
+
+**Skip if:** `--no-checkpoints` is set, OR mode is LITE (proceed straight to Phase 8b using criteria as-is).
+
+```
+AskUserQuestion:
+  question: "Proposed evaluation criteria:
+    1. [criterion_name] — [description] (weight: X%)
+    2. [criterion_name] — [description] (weight: Y%)
+    ...
+    Total: 100%
+
+    Accept, adjust weights, drop a criterion, or add one."
+  header: "Evaluation Criteria"
+  options:
+    - "Accept — use these criteria as-is"
+    - "Adjust weights (type new weights, e.g. feasibility:30,novelty:20,...)"
+    - "Drop a criterion (type which one)"
+    - "Add a criterion (type name and description)"
+```
+
+After user responds: normalize weights to 100%, write confirmed criteria back to `$WORKSPACE/criteria.json`. Then register criteria columns:
+
+```bash
+python scripts/idea_db.py add_criteria <workspace> \
+  --criteria "feasibility,novelty,[session-criteria]" \
+  --composite "total_score"
+```
+
+Log checkpoint result: `Criteria Gate: accepted / adjusted / skipped`.
+
+### Phase 8b: HYBRIDIZE (all modes, sequential)
+
+Spawn Agent:
+- Reads: `phases/08b-hybridize.md` + `agents/synthesizer.md`
+- Input: ALL workspace file paths, `$WORKSPACE/ideas.csv`, **`$WORKSPACE/criteria.json`** (confirmed criteria), `$WORKSPACE/05.8-taste-check.md` (if exists)
+- LITE: hybrids + seed bank only (no proof searches). STANDARD/DEEP: full output + web validation.
+- Produces: convergent signals, unique gems, hybrids (boosting user favorites by +10%), proof searches, seed bank, qualitative roadmap → `$WORKSPACE/08-synthesize.md` + `$WORKSPACE/seed-bank.md` + Idea DB (hybrid IDs)
 - **Does NOT score ideas** — the Scorer (Phase 8.5) applies the criteria.
 
 ### Phase 8.5: SCORE (all modes, sequential)
 
 Spawn Agent:
 - Reads: `phases/08.5-score.md` + `agents/scorer.md`
-- Input: `$WORKSPACE/08-synthesize.md` (criteria + weights), `$WORKSPACE/ideas.csv`, `$WORKSPACE/01-discover.md` (root causes), `$WORKSPACE/07-tension.md` (if exists)
+- Input: `$WORKSPACE/criteria.json` (confirmed criteria + weights), `$WORKSPACE/08-synthesize.md`, `$WORKSPACE/ideas.csv`, `$WORKSPACE/01-discover.md` (root causes), `$WORKSPACE/07-tension.md` (if exists)
 - Produces: ranked Idea Menu, `total_score` and `menu_bucket` (quick_win/core_bet/moonshot/empty) filled in ideas.csv → `$WORKSPACE/08.5-score.md`
 - Separation rationale: the agent that generates hybrids (Synthesizer) is different from the agent that ranks them (Scorer). This removes self-scoring bias.
 

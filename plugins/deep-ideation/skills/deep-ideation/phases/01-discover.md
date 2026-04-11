@@ -56,30 +56,11 @@ The Historian resurfaces relevant ideas from previous sessions and adds up to 15
 
 Output saved to `$WORKSPACE/01-historian.md`.
 
-## Step 5: Confirm and Launch
+## Step 5: Write Output and Return
 
-```
-AskUserQuestion:
-  question: "Root causes found:
-    - [Root Cause A in one sentence]
-    - [Root Cause B in one sentence]
-    - [Root Cause C in one sentence]
+Save to `$WORKSPACE/01-discover.md` and return a short summary to the orchestrator.
 
-    Core contradiction (for TRIZ): Improving [X] worsens [Y]
-
-    HMW questions:
-    1. [HMW 1]
-    2. [HMW 2]
-    3. [HMW 3]
-    4. [HMW 4]
-
-    Ready to launch?"
-  header: "Confirm"
-  options:
-    - "Yes, launch the swarm"
-    - "Adjust the angles first"
-    - "Change the TRIZ contradiction"
-```
+The **framing confirmation** (presenting root causes + TRIZ + HMW to the user) is handled by the orchestrator after this phase completes — not here. This keeps the user-facing checkpoint in the orchestrator so it cannot be silently skipped.
 
 ## Output Requirements
 
