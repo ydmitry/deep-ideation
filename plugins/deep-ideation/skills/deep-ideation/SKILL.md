@@ -13,12 +13,17 @@ Choose before starting. Ask the user if unclear.
 
 | Mode | When to Use | Phases Run | Specialists | Johns |
 |------|------------|-----------|-------------|-------|
-| **LITE** | Quick problem, 30-min session | 1 → 3 → 8 → 9 → 10 | Innovator + Wild Card | 2 (FIRE, ICE) |
-| **STANDARD** | Default. Most problems. | All phases including 9.5 | All 4 specialists | 3-4 (FIRE, PLASMA, ICE + GHOST if >10 cold) |
+| **LITE** | **Default.** Single-decision, ≤1 contradiction, personal/small-team scope | 1 → 3 → 8 → 9 → 10 | Innovator + Wild Card | 2 (FIRE, ICE) |
+| **STANDARD** | Corporate/strategic scope or multi-contradiction problems | All phases except 6.5 and 10; including 9.5 | All 4 specialists | 3-4 (FIRE, PLASMA, ICE + GHOST if >10 cold) |
 | **DEEP** | High-stakes, complex | All phases + Historian + Round 2 | All 4 + Historian | 4-5 (FIRE, PLASMA, ICE, GHOST, MIRROR) |
 
 **LITE skips:** ORCHESTRATE, DISTRIBUTE, BUILD, TENSION, COLLISION MAP, RATCHET, HAT EVAL, STRESS-TEST.
-**DEEP adds:** Historian after DISCOVER, full Collision Map (all zones), Ratchet (3 cycles), Hat Eval, Round 2 option.
+**STANDARD skips:** HAT EVAL (6.5), BRILLIANCE (10).
+**DEEP adds:** Historian after DISCOVER, full Collision Map (all zones), Ratchet (3 cycles), Hat Eval, Brilliance, Round 2 option.
+
+## Mode-Selection Heuristics
+
+Default to **LITE** when the problem is: (a) single-decision, (b) has ≤1 explicit contradiction, and (c) scope is `personal` or `small-team`. STANDARD only triggers on `corporate`/`strategic` scope or multi-contradiction problems. DEEP remains opt-in.
 
 ## Workspace Setup
 
@@ -36,6 +41,27 @@ Every subagent prompt must include `references/output-rules.md` in its file list
 - Idea Menu bucket definitions (Quick Wins / Core Bets / Moonshots)
 
 ## Phase Orchestration
+
+### Session Start: Mode Selection
+
+Before spawning any phase agents, analyze the problem statement and determine the recommended mode using the heuristics above. Then ask:
+
+```
+AskUserQuestion:
+  question: "How deep should this go?
+    LITE [recommended]: Quick decision. 30 min. Core analysis + synthesis.
+    STANDARD: Full pipeline. All specialists + synthesis. ~90 min.
+    DEEP: Maximum depth. Full pipeline + history + web validation + optional Round 2."
+  header: "Session depth"
+  options:
+    - "LITE — quick exploration"
+    - "STANDARD — full session"
+    - "DEEP — maximum depth"
+```
+
+Log to telemetry: `mode_selected=<chosen>`, `mode_recommended=<pre-selected based on heuristics>`, `mode_auto_advance=false`.
+
+After Phase 1, if Digger emits a `recommended_mode` that is simpler than the user-selected mode, inform the user and offer to downgrade.
 
 For each phase: spawn an Agent, pass it the files to read, the input from prior phases, and the problem statement. Collect the summary it returns. Pass file PATHS (not full content) between phases. Pass short summaries (2-5 sentences) for context.
 
@@ -112,7 +138,7 @@ Spawn Agent:
 - Input: all John output paths, `$WORKSPACE/05.7-ratchet.md` (ratchet syntheses)
 - Produces: 20-30 enhanced ideas + cross-zone combos + seed usage report → `$WORKSPACE/06-build.md` + Idea DB (IDs returned)
 
-### Phase 6.5: HAT EVAL (skip in LITE, sequential)
+### Phase 6.5: HAT EVAL (skip in LITE and STANDARD, sequential)
 
 Spawn Agent:
 - Reads: `phases/06.5-hat-eval.md` + `$WORKSPACE/06-build.md`
@@ -151,7 +177,7 @@ Spawn Agent:
 - STANDARD: top 5 by `total_score`, 2 rounds. DEEP: top 8, 3 rounds.
 - Produces: confidence adjustments → `$WORKSPACE/09.5-stress-test.md` + updated ideas.csv
 
-### Phase 10: BRILLIANCE (all modes, sequential)
+### Phase 10: BRILLIANCE (DEEP only, sequential)
 
 Spawn Agent:
 - Reads: `phases/10-brilliance.md` + `agents/brilliance.md`

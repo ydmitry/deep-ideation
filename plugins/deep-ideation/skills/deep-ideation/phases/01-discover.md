@@ -12,22 +12,9 @@ python scripts/idea_db.py init "$WORKSPACE"
 
 Tell the user their session workspace: `Session workspace: $WORKSPACE`
 
-## Step 2: Determine Complexity Mode
+## Step 2: Confirm Complexity Mode
 
-If the user hasn't specified, ask:
-
-```
-AskUserQuestion:
-  question: "How deep should we go?
-    LITE: Fast. 30 min. Digger + 2 specialists + quick synthesis.
-    STANDARD: Full pipeline. 4 specialists + 3 Johns + synthesis. ~90 min.
-    DEEP: Maximum. Full pipeline + cross-session history + web validation + optional Round 2."
-  header: "Mode"
-  options:
-    - "LITE — quick exploration"
-    - "STANDARD — full session"
-    - "DEEP — maximum depth"
-```
+The orchestrator selects the mode before spawning this phase and passes it as input. Use the mode provided. If no mode was passed, default to **LITE**.
 
 ## Step 3: Run the Digger
 
@@ -89,7 +76,8 @@ Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator 
 2. **HMW questions** (4-6, each pointing in a different direction)
 3. **TRIZ trade-off** ("Improving X worsens Y")
 4. **Depth-layered ideas** (surface/mid/root per angle)
-5. **Complexity mode** selected by the user
+5. **Complexity mode** confirmed for this session
+6. **`recommended_mode`** — Digger's assessment of the appropriate mode based on problem shape: `LITE` if single-decision with ≤1 contradiction and personal/small-team scope; `STANDARD` if multi-contradiction or corporate/org scope; `DEEP` if high-stakes or complex system. The orchestrator uses this to offer a mid-run downgrade if the problem is simpler than the user selected.
 
 If Historian ran (DEEP mode), also save `$WORKSPACE/01-historian.md` with up to 15 cross-domain seeds.
 

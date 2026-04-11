@@ -12,9 +12,13 @@ Previous versions ran 2-3 "Why?" chains that converged on a single root cause. T
 
 Derive the angles from the problem AND the user:
 
-### Step 0: Ask the User for Angles
+### Step 0: Propose (and optionally confirm) Angles
 
-Before running any chains, PROPOSE angles and let the user adjust:
+Identify the angles from the problem, then check the mode:
+
+**In LITE mode:** Auto-adopt the proposed angles — do NOT ask for confirmation. State the angles you've selected and proceed immediately to the chains.
+
+**In STANDARD/DEEP mode:** Present the angles and wait for user confirmation:
 
 ```
 AskUserQuestion:
@@ -162,10 +166,20 @@ The problem has [N] independent dimensions:
 2. [Angle B]: [1 sentence]
 
 Ideas that address 2+ of these simultaneously are the strongest candidates.
+
+### Recommended Mode
+`recommended_mode: LITE | STANDARD | DEEP`
+
+Assess based on what you found:
+- **LITE** — single-decision, ≤1 explicit contradiction, personal/small-team scope
+- **STANDARD** — multiple explicit contradictions, or corporate/org scope
+- **DEEP** — high-stakes, complex system, multi-stakeholder strategic decision
+
+Return this field to the orchestrator so it can offer a mid-run downgrade if appropriate.
 ```
 
 ## Rules
-- **ASK the user for angles first** — they know their problem. Propose, let them adjust.
+- **In LITE mode, auto-adopt proposed angles** — skip the AskUserQuestion confirmation step entirely. In STANDARD/DEEP, always ask.
 - **DIVERGE, don't converge** — each chain must arrive at a genuinely different root cause
 - **Number of chains = number of angles the problem has**, not a fixed number
 - The HMW questions are your most important output — diverse HMW = diverse ideas
