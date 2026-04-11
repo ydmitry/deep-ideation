@@ -1,5 +1,41 @@
 # Phase 9: CONVERGE
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/08.5-score.md` | Ranked Idea Menu, bucket assignments, brilliance output |
+| `$WORKSPACE/08-synthesize.md` | Hybrids, proof searches, convergent signals |
+| `$WORKSPACE/09.5-stress-test.md` (if exists) | Confidence adjustments, strongest objections |
+| `$WORKSPACE/ideas.csv` (via `idea_db.py top $WORKSPACE total_score --n 10`) | Top-ranked ideas with all columns |
+| `$WORKSPACE/session-state.md` | Open tensions, full phase log |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/09-converge.md`) with:
+
+```
+## Upstream References
+- `$WORKSPACE/08.5-score.md` — ranked menu + brilliance (full)
+- `$WORKSPACE/08-synthesize.md` — hybrids + proof searches (full)
+- `$WORKSPACE/09.5-stress-test.md` — confidence adjustments (full, if run)
+- DB top ideas: #<ids>
+- `$WORKSPACE/session-state.md` — full phase log
+```
+
+## DB Write Receipt
+
+After any `set_batch` updates (selected, proof_verdict, user_action), output as the last line:
+```json
+{"delta": 0, "ids": [], "updated": [<selected_idea_ids>]}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 9 (CONVERGE): completed, delta=0, ids=[], updated=[<selected ids>], upstream=[08.5-score.md, 08-synthesize.md]
+```
+
 Three-part convergence: Filter → Validate → Decide. Optionally: Round 2.
 
 ## Part 1: Decision Tree

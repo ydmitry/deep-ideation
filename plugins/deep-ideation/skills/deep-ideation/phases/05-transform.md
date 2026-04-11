@@ -1,5 +1,37 @@
 # Phase 5: TRANSFORM (Parallel, Deliberate)
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/04-distribute.md` | Your John's assignment, temperature zone, TRIZ trade-off |
+| Your assigned seeds from the DB (`idea_db.py filter $WORKSPACE assigned_to <YourJohn>`) | Full seed list |
+| `$WORKSPACE/session-state.md` | Cohort IDs, open tensions |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/05-john-<letter>.md`) with:
+
+```
+## Upstream References
+- `$WORKSPACE/04-distribute.md` — assignment and temperature zone
+- DB seeds: idea #<start>-#<end> (filtered by assigned_to=<YourJohn>)
+- `$WORKSPACE/session-state.md` — open tensions
+```
+
+## DB Write Receipt
+
+After `add_batch`, output as the last line:
+```json
+{"delta": <N>, "ids": [<id1>, <id2>, ...], "updated": []}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 5 (TRANSFORM) <john-name>: completed, delta=<N>, ids=[<start>-<end>], upstream=[04-distribute.md, seeds#<range>]
+```
+
 Launch N Johns simultaneously — the exact count and zones are determined by Phase 4 (DISTRIBUTE). Each reads `agents/john.md` + their seed batch + their temperature zone constraints.
 
 ## Launch Instructions

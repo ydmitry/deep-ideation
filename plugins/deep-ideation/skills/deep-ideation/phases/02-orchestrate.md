@@ -1,5 +1,35 @@
 # Phase 2: ORCHESTRATE
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/01-discover.md` | Root Causes, HMW Questions, TRIZ Trade-Off, IFR |
+| `$WORKSPACE/session-state.md` | All |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/02-orchestrate.md`) with:
+
+```
+## Upstream References
+- `$WORKSPACE/01-discover.md` — root causes, HMW questions, TRIZ trade-off
+- `$WORKSPACE/session-state.md` — open tensions
+```
+
+## DB Write Receipt
+
+This phase does not add ideas to the DB. Return at the end:
+```json
+{"delta": 0, "ids": [], "updated": []}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 2 (ORCHESTRATE): completed, delta=0, ids=[], upstream=[01-discover.md, session-state.md]
+```
+
 Analyze problem type, set the Ideal Final Result, plan seed distribution, and assign temperature zones.
 
 ## Step 1: Classify Problem Type

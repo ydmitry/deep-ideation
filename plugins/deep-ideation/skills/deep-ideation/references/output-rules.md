@@ -95,3 +95,25 @@ All phases must reference ideas by their DB-assigned integer ID.
 - **Downstream phases must key off the integer ID**, not the alias
 
 When writing to workspace files (e.g., `08-synthesize.md`), every idea reference must include its DB integer ID. If you refer to an idea by name, always include `(#47)` after it.
+
+## DB Write Receipt
+
+Every phase that adds or updates ideas in the DB must output a JSON receipt as the **last thing it prints to stdout before finishing**:
+
+```json
+{"delta": <new_rows_added>, "ids": [<id1>, <id2>, ...], "updated": [<updated_id1>, ...]}
+```
+
+- `delta`: number of new rows added (0 for update-only phases)
+- `ids`: DB integer IDs of newly added rows (empty list if delta=0)
+- `updated`: DB integer IDs of rows updated (empty list if no updates)
+
+The orchestrator uses this receipt to validate that ideas actually landed in the DB.
+
+## Session State Updates
+
+Every phase must append a one-line summary to `$WORKSPACE/session-state.md` after completing:
+
+```
+Phase <N> (<NAME>): completed, delta=<delta>, ids=[<start>-<end> or empty], upstream=[file1, file2, ...]
+```

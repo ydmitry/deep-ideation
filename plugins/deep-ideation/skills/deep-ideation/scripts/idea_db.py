@@ -8,7 +8,8 @@ Built-in columns: id, name, description, source_agent, source_seed, chain, tag, 
 Usage:
     python idea_db.py init <workspace>                    # Create empty idea DB
     python idea_db.py add <workspace> --name "..." --description "..." --source_agent "..." [--source_seed "..."] [--chain "..."] [--tag SAFE|BOLD|WILD] [--phase seed|transform|build|tension|synthesis]
-    python idea_db.py add_batch <workspace> <json_file>   # Add multiple ideas from JSON
+    python idea_db.py add_batch <workspace> <json_file> [--reserved-ids START-END]   # Add multiple ideas from JSON (optionally with pre-reserved IDs)
+    python idea_db.py reserve_ids <workspace> --n <count>    # Reserve N consecutive IDs for a parallel agent
     python idea_db.py add_column <workspace> <column_name> [--default ""]  # Add a new evaluation column
     python idea_db.py set <workspace> <id> <column> <value>               # Set a value for an idea
     python idea_db.py set_batch <workspace> <json_file>                   # Set multiple values from JSON
@@ -128,9 +129,26 @@ def cmd_add_batch(args):
     with open(args.json_file, "r") as f:
         ideas = json.load(f)
 
+    reserved = []
+    if getattr(args, "reserved_ids", "") and args.reserved_ids:
+        parts = args.reserved_ids.split("-")
+        id_start = int(parts[0])
+        id_end = int(parts[1])
+        reserved = list(range(id_start, id_end + 1))
+        if len(reserved) < len(ideas):
+            print(
+                f"Error: reserved ID range {args.reserved_ids} has {len(reserved)} slots "
+                f"but JSON has {len(ideas)} ideas.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
     added = 0
-    for idea in ideas:
-        new_id = next_id(rows)
+    for i, idea in enumerate(ideas):
+        if reserved:
+            new_id = reserved[i]
+        else:
+            new_id = next_id(rows)
         row = {col: "" for col in columns}
         row["id"] = str(new_id)
         for key, value in idea.items():
@@ -143,6 +161,23 @@ def cmd_add_batch(args):
     added_ids = [rows[-(added - i)]["id"] for i in range(added)]
     print(f"Added {added} ideas")
     print(f"IDs: {','.join(added_ids)}")
+
+
+def cmd_reserve_ids(args):
+    reserve_path = os.path.join(args.workspace, ".id_reserve")
+    columns, rows = read_db(args.workspace)
+    max_committed = max((int(r.get("id", 0)) for r in rows), default=0)
+    if os.path.exists(reserve_path):
+        with open(reserve_path, "r") as f:
+            watermark = int(f.read().strip() or 0)
+    else:
+        watermark = 0
+    id_start = max(max_committed, watermark) + 1
+    id_end = id_start + args.n - 1
+    with open(reserve_path, "w") as f:
+        f.write(str(id_end))
+    print(f"RESERVED: {id_start}-{id_end}")
+    print(f"COUNT: {args.n}")
 
 
 def cmd_add_column(args):
@@ -635,6 +670,8 @@ def main():
     p = subparsers.add_parser("add_batch")
     p.add_argument("workspace")
     p.add_argument("json_file")
+    p.add_argument("--reserved-ids", default="", dest="reserved_ids",
+                   help="Pre-reserved ID range: 'START-END' (e.g. 51-70)")
 
     # add_column
     p = subparsers.add_parser("add_column")
@@ -735,6 +772,11 @@ def main():
     p.add_argument("workspace")
     p.add_argument("column")
 
+    # reserve_ids
+    p = subparsers.add_parser("reserve_ids")
+    p.add_argument("workspace")
+    p.add_argument("--n", type=int, required=True)
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -748,6 +790,7 @@ def main():
         "add_criteria": cmd_add_criteria, "compute": cmd_compute,
         "multi_filter": cmd_multi_filter, "size": cmd_size, "slice": cmd_slice,
         "describe": cmd_describe, "unscored": cmd_unscored,
+        "reserve_ids": cmd_reserve_ids,
     }
 
     # All commands except init acquire a file lock so parallel agents

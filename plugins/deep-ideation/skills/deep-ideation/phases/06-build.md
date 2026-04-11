@@ -1,5 +1,37 @@
 # Phase 6: BUILD
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/05-john-a.md`, `05-john-b.md`, etc. (all John files) | Full transform outputs |
+| `$WORKSPACE/05.7-ratchet.md` | Ratchet syntheses per hot zone |
+| `$WORKSPACE/session-state.md` | Cohort IDs, open tensions |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/06-build.md`) with:
+
+```
+## Upstream References
+- `$WORKSPACE/05-john-*.md` — all John outputs (full)
+- `$WORKSPACE/05.7-ratchet.md` — ratchet syntheses (full)
+- `$WORKSPACE/session-state.md` — cohort IDs, open tensions
+```
+
+## DB Write Receipt
+
+After `add_batch`, output as the last line:
+```json
+{"delta": <N>, "ids": [<id1>, ...], "updated": [<seed_ids_with_usage_updated>]}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 6 (BUILD): completed, delta=<N>, ids=[<start>-<end>], upstream=[05-john-*.md, 05.7-ratchet.md]
+```
+
 Launch the Brainwriter. See `agents/brainwriter.md`.
 
 ## What the Brainwriter Does

@@ -26,6 +26,9 @@ Choose before starting. Ask the user if unclear.
 WORKSPACE="results/$(date +%Y%m%d-%H%M%S)-$(echo "$PROBLEM" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | head -c 30)"
 mkdir -p "$WORKSPACE/seeds"
 python scripts/idea_db.py init "$WORKSPACE"
+cp references/session-state-template.md "$WORKSPACE/session-state.md"
+# Write problem statement into session-state.md
+echo "Problem Statement: $PROBLEM" >> "$WORKSPACE/session-state.md"
 ```
 
 ## Mandatory Output Standards
@@ -44,6 +47,8 @@ For each phase: spawn an Agent, pass it the files to read, the input from prior 
 - `references/idea-db.md` — CSV database API (for phases that write/read ideas: 3-10)
 - `$WORKSPACE` path — for all file reads/writes and `idea_db.py` commands
 - Problem statement (one sentence)
+- `$WORKSPACE/session-state.md` — read in full at start; append one line at end
+- Receipt requirement: output `{"delta": N, "ids": [...], "updated": [...]}` as last stdout before finishing
 
 ### Phase 1: DISCOVER (all modes, sequential)
 
@@ -196,6 +201,42 @@ Pass the `--ids` range to each parallel agent. The agent uses `slice` to read on
 5. **`$WORKSPACE` path** goes to every subagent — they use it for all `idea_db.py` commands.
 6. **`references/idea-db.md`** path goes to every subagent that writes or reads ideas (Phases 3-10). The CSV is the shared state — agents read and write `$WORKSPACE/ideas.csv` via `python scripts/idea_db.py` commands documented in each phase/agent file.
 7. **If a subagent fails**, retry once. If it fails again, skip with a note and continue.
+8. **`$WORKSPACE/session-state.md`** path goes to every subagent — they read it at start (full) and append one line at end.
+9. **DB-write validation after every phase that writes ideas:** capture `size_before` before dispatch and `size_after` after. Compare against the receipt `{"delta": N, "ids": [...]}` the subagent returns. If `size_after - size_before != delta` or any returned ID is missing from the DB, re-invoke the phase once. If the second run also fails, surface a visible error: `ERROR: Phase X DB write validation failed. Expected delta=N, got M. Missing IDs: [...]` — do not proceed silently.
+
+## DB Write Validation Protocol
+
+For every phase that writes ideas to the DB, follow this pattern:
+
+```bash
+# 1. Capture size before dispatch
+SIZE_BEFORE=$(python scripts/idea_db.py size $WORKSPACE | grep "^SIZE:" | cut -d' ' -f2)
+
+# 2. Dispatch phase subagent — it returns a receipt as its last stdout line:
+#    {"delta": N, "ids": [id1, id2, ...], "updated": [...]}
+
+# 3. Capture size after
+SIZE_AFTER=$(python scripts/idea_db.py size $WORKSPACE | grep "^SIZE:" | cut -d' ' -f2)
+
+# 4. Validate
+ACTUAL_DELTA=$((SIZE_AFTER - SIZE_BEFORE))
+if [ "$ACTUAL_DELTA" != "$RECEIPT_DELTA" ]; then
+  echo "ERROR: Phase X DB write validation failed. Expected delta=$RECEIPT_DELTA, got $ACTUAL_DELTA."
+  # Re-invoke phase once, then raise error if still failing
+fi
+
+# 5. Append to session-state.md
+echo "Phase X (NAME): completed, delta=$RECEIPT_DELTA, ids=[$ID_RANGE], upstream=[$UPSTREAM_FILES]" >> "$WORKSPACE/session-state.md"
+```
+
+Phases that only update existing rows (Score, Stress-Test, Converge, Brilliance) return `delta=0` and `ids=[]`. For these, the `size_before == size_after` check still applies.
+
+For parallel phases (Phase 3 SEED, Phase 5 TRANSFORM), pre-reserve ID ranges before dispatching:
+
+```bash
+RANGE=$(python scripts/idea_db.py reserve_ids $WORKSPACE --n 20 | grep "^RESERVED:" | cut -d' ' -f2)
+# Pass $RANGE to each parallel agent as its --reserved-ids argument for add_batch
+```
 
 ## The Idea Database
 

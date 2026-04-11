@@ -1,5 +1,43 @@
 # Phase 7: TENSION (Groan Zone)
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/05-john-a.md`, `05-john-b.md`, etc. (all John files) | Full transform outputs |
+| `$WORKSPACE/06-build.md` | Enhanced ideas and seed usage report |
+| `$WORKSPACE/06.5-hat-eval.md` (if exists) | Hat evaluation insights, invert candidates |
+| `$WORKSPACE/05.5-collision-map.md` | Warm zones |
+| `$WORKSPACE/01-discover.md` | TRIZ Contradiction Card, root causes |
+| `$WORKSPACE/session-state.md` | Open tensions, cohort IDs |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/07-tension.md`) with:
+
+```
+## Upstream References
+- `$WORKSPACE/05-john-*.md` — all John outputs (full)
+- `$WORKSPACE/06-build.md` — build outputs (full)
+- `$WORKSPACE/06.5-hat-eval.md` — hat eval (full, if run)
+- `$WORKSPACE/05.5-collision-map.md` — warm zones
+- `$WORKSPACE/01-discover.md` — TRIZ card, root causes
+- `$WORKSPACE/session-state.md` — open tensions
+```
+
+## DB Write Receipt
+
+After `add_batch` (bridge ideas), output as the last line:
+```json
+{"delta": <N>, "ids": [<bridge_idea_ids>], "updated": []}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 7 (TENSION): completed, delta=<N>, ids=[<start>-<end>], upstream=[05-john-*.md, 06-build.md, 01-discover.md]
+```
+
 Launch the Tension Analyzer. See `agents/tension-analyzer.md`.
 
 > **Scope:** Hot zones have already been resolved by the Dialectical Ratchet (Phase 5.7).

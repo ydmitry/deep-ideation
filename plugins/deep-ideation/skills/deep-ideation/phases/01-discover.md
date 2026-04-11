@@ -1,5 +1,34 @@
 # Phase 1: DISCOVER (Non-Negotiable)
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/session-state.md` | Problem Statement, Open Tensions |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/01-discover.md`) with:
+
+```
+## Upstream References
+- problem statement (from orchestrator)
+- `$WORKSPACE/session-state.md` — open tensions
+```
+
+## DB Write Receipt
+
+This phase does not add ideas to the DB. Return at the end:
+```json
+{"delta": 0, "ids": [], "updated": []}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 1 (DISCOVER): completed, delta=0, ids=[], upstream=[session-state.md]
+```
+
 The Digger runs first, always. Root cause analysis + HMW reframing is the single most valuable output of the entire skill — it determines the quality of everything that follows.
 
 ## Step 1: Set Up Workspace

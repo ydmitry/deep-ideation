@@ -37,6 +37,24 @@ Batch JSON format:
 ]
 ```
 
+### Parallel Agents — Reserving IDs Before Dispatch
+
+When the orchestrator splits work across parallel agents, it pre-reserves ID ranges to prevent collisions:
+
+```bash
+# Orchestrator reserves IDs before dispatching parallel agents
+python scripts/idea_db.py reserve_ids $WORKSPACE --n 20
+# → RESERVED: 51-70
+# → COUNT: 20
+```
+
+Pass the reserved range to each agent as `--reserved-ids`:
+```bash
+python scripts/idea_db.py add_batch $WORKSPACE agent-seeds.json --reserved-ids 51-70
+```
+
+This guarantees Agent A writes IDs 51-70 and Agent B writes IDs 71-90, with no overlap, even if they run simultaneously.
+
 ### John Agents (TRANSFORM phase)
 When transforming seeds, record the new idea with its chain and temperature zone:
 ```bash

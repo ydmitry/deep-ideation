@@ -1,5 +1,37 @@
 # Phase 3: SEED (Parallel, Fast)
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/02-orchestrate.md` | Problem type, specialist emphasis, IFR, distribution plan (skip in LITE — use `01-discover.md` instead) |
+| `$WORKSPACE/01-discover.md` | Root Causes, HMW Questions, TRIZ Trade-Off |
+| `$WORKSPACE/session-state.md` | All |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/seeds/<agent-name>.md`) with:
+
+```
+## Upstream References
+- `$WORKSPACE/02-orchestrate.md` — specialist emphasis, IFR
+- `$WORKSPACE/01-discover.md` — root causes, HMW questions
+- `$WORKSPACE/session-state.md` — open tensions
+```
+
+## DB Write Receipt
+
+After `add_batch`, output as the last line:
+```json
+{"delta": <N>, "ids": [<id1>, <id2>, ...], "updated": []}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 3 (SEED) <agent-name>: completed, delta=<N>, ids=[<start>-<end>], upstream=[02-orchestrate.md, 01-discover.md]
+```
+
 Launch specialist agents simultaneously. Each gets the Problem Brief + HMW questions + TRIZ trade-off.
 
 ## Specialists to Launch

@@ -1,5 +1,37 @@
 # Phase 4: INTEGRATE SEED TRIAGE + DISTRIBUTE
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/02-orchestrate.md` | Problem type, specialist emphasis, IFR |
+| `$WORKSPACE/seeds/<agent>.md` (all) | Full seed lists |
+| `$WORKSPACE/session-state.md` | Cohort IDs, open tensions |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/04-distribute.md`) with:
+
+```
+## Upstream References
+- `$WORKSPACE/02-orchestrate.md` — orchestration plan
+- `$WORKSPACE/seeds/*.md` — all seed files (full)
+- `$WORKSPACE/session-state.md` — cohort IDs
+```
+
+## DB Write Receipt
+
+After any `set` or `add_column` calls, output at the end:
+```json
+{"delta": 0, "ids": [], "updated": [<ids of triaged seeds>]}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 4 (DISTRIBUTE): completed, delta=0, ids=[], upstream=[02-orchestrate.md, seeds/*.md]
+```
+
 Two steps: first classify seeds (Triage), then assign them to Johns (Distribute).
 
 ---

@@ -4,6 +4,46 @@ Launch the Synthesizer. See `agents/synthesizer.md`.
 
 The Synthesizer produces hybrids, convergent signals, and the session-derived evaluation criteria (with weights). It does NOT score ideas — Phase 8.5 (SCORE) does that. Keeping the hybrid-author and the ranker separate prevents self-scoring bias.
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/01-discover.md` | Root causes, HMW questions, TRIZ card |
+| `$WORKSPACE/05-john-*.md` (all John files) | Full transform outputs and chains |
+| `$WORKSPACE/06-build.md` | Enhanced ideas, seed usage report |
+| `$WORKSPACE/06.5-hat-eval.md` (if exists) | Hat evaluation, combination suggestions |
+| `$WORKSPACE/07-tension.md` | Tensions, bridges, PMI insights |
+| `$WORKSPACE/ideas.csv` (via `idea_db.py describe` + `show`) | Current DB state |
+| `$WORKSPACE/session-state.md` | Open tensions, cohort IDs from all prior phases |
+
+## Output Header
+
+Begin your output file (`$WORKSPACE/08-synthesize.md`) with:
+
+```
+## Upstream References
+- `$WORKSPACE/01-discover.md` — root causes, TRIZ card (full)
+- `$WORKSPACE/05-john-*.md` — all John outputs (full)
+- `$WORKSPACE/06-build.md` — build outputs (full)
+- `$WORKSPACE/06.5-hat-eval.md` — hat eval (full, if run)
+- `$WORKSPACE/07-tension.md` — tensions and bridges (full)
+- DB ideas: #1-#<max> (full schema via describe)
+- `$WORKSPACE/session-state.md` — accumulated tensions and cohort IDs
+```
+
+## DB Write Receipt
+
+After `add_batch` (hybrid ideas), output as the last line:
+```json
+{"delta": <N>, "ids": [<hybrid_ids>], "updated": []}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 8 (SYNTHESIZE): completed, delta=<N>, ids=[<start>-<end>], upstream=[all prior phases]
+```
+
 ## What It Receives
 
 All previous phase outputs:

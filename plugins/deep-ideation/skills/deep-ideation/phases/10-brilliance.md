@@ -1,5 +1,45 @@
 # Phase 10: BRILLIANCE FILTER
 
+## Context Intake
+
+Before starting, load these files in full:
+
+| File | What to extract |
+|------|----------------|
+| `$WORKSPACE/08.5-score.md` | Ranked Idea Menu, bucket assignments |
+| `$WORKSPACE/08-synthesize.md` | Hybrids, convergent signals |
+| `$WORKSPACE/ideas.csv` (via `idea_db.py top $WORKSPACE total_score --n 10`) | Top ideas with all columns |
+| `$WORKSPACE/07-tension.md` (if exists) | Tensions — context for Brilliance framing |
+| `$WORKSPACE/01-discover.md` | Root causes — anchor for Brilliance evaluation |
+| `$WORKSPACE/session-state.md` | Open tensions, full phase log |
+
+## Output Header
+
+Your output is appended to `$WORKSPACE/08.5-score.md`. Begin the appended section with:
+
+```
+## Brilliance Scorecard
+
+### Upstream References
+- `$WORKSPACE/08.5-score.md` — ranked menu (full)
+- `$WORKSPACE/08-synthesize.md` — hybrids + convergent signals (full)
+- DB top ideas: #<ids>
+- `$WORKSPACE/07-tension.md` — tensions (full, if run)
+- `$WORKSPACE/01-discover.md` — root causes
+- `$WORKSPACE/session-state.md` — phase log
+```
+
+## DB Write Receipt
+
+After `set_batch` (brilliance_tier, brilliance_pitch), output as the last line:
+```json
+{"delta": 0, "ids": [], "updated": [<brilliance_scored_ids>]}
+```
+Then append to `$WORKSPACE/session-state.md`:
+```
+Phase 10 (BRILLIANCE): completed, delta=0, ids=[], updated=[<count> ideas], upstream=[08.5-score.md, 08-synthesize.md]
+```
+
 Launch the Brilliance Filter. See `agents/brilliance.md`.
 
 ## When to Run
