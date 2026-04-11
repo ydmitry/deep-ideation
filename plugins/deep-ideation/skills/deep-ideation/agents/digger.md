@@ -14,14 +14,17 @@ Derive the angles from the problem AND the user:
 
 ### Step 0: Read Context Facts (if available)
 
-Before proposing angles, check whether `$WORKSPACE/00-context.md` exists and has `context_facts_count > 0`.
+Before proposing angles, read `$WORKSPACE/00-context.md`. It's written by the Reality Scout in parallel and contains citable facts tagged with `problem_class`, source type, date, and confidence.
 
-If it does:
-- Read the facts. Let them inform your angle proposals — if the context reveals a competitor dynamic, a pricing gap, or a regulatory constraint, make sure at least one angle targets it.
-- In the TRIZ trade-off step (Step 4 below), ground the contradiction in at least one cited fact where applicable. Note which fact you used with its URL.
-- Do NOT add generic "market" angles just because context exists — only add angles the facts actually support.
+If `context_facts_count > 0`:
 
-If the file is a stub (`context_facts_count: 0`): proceed without context grounding.
+- **Read facts through the `problem_class` lens.** A scientific problem's facts are about mechanism and replication; a creative problem's facts are about exemplars and reception; a technical problem's facts are about benchmarks and postmortems; a commercial problem's facts are about markets and moves. Don't force a commercial reading onto a non-commercial problem.
+- **Weight facts by confidence, not by quantity.** Strong-confidence facts (peer-reviewed, primary data) can anchor angles and the TRIZ trade-off. Weak-confidence facts (single community post, undated vendor page) are hints, not anchors.
+- **Prioritise falsification facts.** If `falsification_facts_count > 0`, at least one angle must interrogate *why prior attempts failed*. Failed attempts are the highest-signal input for divergent root-cause analysis — they reveal structural traps that pure logic misses.
+- In the TRIZ trade-off (Step 4 below), ground the contradiction in at least one **strong-confidence** cited fact when available. Note which fact you used with its URL and confidence tag.
+- Don't add an angle just because context exists for it — only add angles the facts actually support.
+
+If the file is a stub (`context_facts_count: 0`): proceed without grounding, and flag in your output that the session is operating on priors for this problem.
 
 ### Step 1: Ask the User for Angles
 

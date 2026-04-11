@@ -29,15 +29,15 @@ AskUserQuestion:
     - "DEEP — maximum depth"
 ```
 
-## Step 3: Run Context Scout + Digger in Parallel
+## Step 3: Run Reality Scout + Digger in Parallel
 
-**Context Scout** (`agents/context-scout.md`) runs simultaneously with the Digger.
+**Reality Scout** (`agents/context-scout.md`) runs simultaneously with the Digger in all modes (LITE/STANDARD/DEEP) regardless of problem class.
 
-- Mandatory in STANDARD and DEEP modes, or any corporate/strategic problem.
-- LITE mode on personal problems: skip (write stub).
+- The scout classifies the problem (`problem_class`), gathers citable facts with epistemic tags, and always tries for at least one falsification fact.
 - Output saved to `$WORKSPACE/00-context.md`.
+- The scout writes a stub **only** when the problem is genuinely ungroundable (rare) — not as a shortcut for any particular mode or problem class.
 
-Wait for both to complete before Step 4.
+Digger waits for the scout to finish, then reads `00-context.md` at its Step 0 before proposing angles.
 
 ## Step 4: Run the Digger
 
@@ -100,7 +100,7 @@ Save to `$WORKSPACE/01-discover.md`. Return a short summary to the orchestrator 
 3. **TRIZ trade-off** ("Improving X worsens Y")
 4. **Depth-layered ideas** (surface/mid/root per angle)
 5. **Complexity mode** selected by the user
-6. **context_facts_count** — the count from `$WORKSPACE/00-context.md` header (0 if stub)
+6. **Context telemetry** — `problem_class`, `context_facts_count`, and `falsification_facts_count` from `$WORKSPACE/00-context.md` header
 
 If Historian ran (DEEP mode), also save `$WORKSPACE/01-historian.md` with up to 15 cross-domain seeds.
 
@@ -114,7 +114,7 @@ After DISCOVER, every agent receives:
 - **HMW questions** (4-6, each pointing in a different direction)
 - **TRIZ trade-off** ("Improving X worsens Y")
 - **IFR** (Ideal Final Result, set in ORCHESTRATE)
-- **`$WORKSPACE/00-context.md`** path — cited real-world facts (pass to all agents; stub if not applicable)
+- **`$WORKSPACE/00-context.md`** path — citable facts with epistemic tags and `problem_class` header (passed to every downstream agent; stub only when the problem is ungroundable)
 - **Historical seeds** (if Historian ran — DEEP mode)
 
 ## Anti-Patterns

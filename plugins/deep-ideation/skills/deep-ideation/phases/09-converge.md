@@ -173,7 +173,7 @@ Return a short summary to the orchestrator containing:
 2. **Proof search verdicts**: Market validated / Unvalidated / Counter-evidence per idea
 3. **User's decision**: which idea(s) to act on
 4. **Round 2 decision** (DEEP mode): whether to run a second round, and if so, the new direction
-5. **Context grounding** (if `$WORKSPACE/00-context.md` has `context_facts_count > 0`): cite at least one fact from `00-context.md` in the final recommendation rationale. Format: `[Fact text] (Source: URL, Date)`.
+5. **Context grounding** (if `$WORKSPACE/00-context.md` has `context_facts_count > 0`): cite at least one fact from `00-context.md` in the final recommendation rationale, including source type and confidence. Format: `[Fact text] (Source: URL | type: [source_type] | date: [YYYY-MM-DD] | confidence: [strong/moderate/weak])`. When `falsification_facts_count > 0`, at least one cited fact must be a falsification fact — evidence against obvious solutions is stronger grounding than evidence for them.
 
 See `references/output-rules.md` for mandatory idea description and CSV column rules.
 

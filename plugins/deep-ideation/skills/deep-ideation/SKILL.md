@@ -45,20 +45,18 @@ For each phase: spawn an Agent, pass it the files to read, the input from prior 
 - `$WORKSPACE` path — for all file reads/writes and `idea_db.py` commands
 - Problem statement (one sentence)
 
-### Phase 1: DISCOVER (all modes, sequential)
+### Phase 1: DISCOVER (all modes)
 
 Spawn two Agents in parallel:
-1. **Digger** — Reads: `phases/01-discover.md` + `agents/digger.md` + `$WORKSPACE/00-context.md` (once Context Scout completes)
-2. **Context Scout** — Reads: `agents/context-scout.md`; Input: problem statement, `$WORKSPACE` path; Produces: `$WORKSPACE/00-context.md`
-   - Mandatory: STANDARD, DEEP, or any corporate/strategic problem
-   - Skip (write stub): LITE on personal problems
+1. **Reality Scout** — Reads: `agents/context-scout.md`; Input: problem statement, `$WORKSPACE` path; Produces: `$WORKSPACE/00-context.md` with `problem_class`, citable facts, epistemic tags, and falsification facts. Runs in **all modes** regardless of problem class. Writes a stub only when the problem is truly ungroundable.
+2. **Digger** — Reads: `phases/01-discover.md` + `agents/digger.md`. Waits for Reality Scout to finish, then reads `$WORKSPACE/00-context.md` at its Step 0 before proposing angles.
 
-Wait for Context Scout to finish before passing `$WORKSPACE/00-context.md` to Digger. If Context Scout fails, proceed with a stub.
+If Reality Scout fails, proceed with a stub and note the session is operating on priors.
 
 - Digger produces: root causes, HMW questions, TRIZ trade-off, depth-layered ideas, complexity mode → `$WORKSPACE/01-discover.md`
 - After: present root causes + HMW (and a one-line context summary if `context_facts_count > 0`) to user for confirmation before proceeding
 - If DEEP: spawn a third Agent reading `agents/historian.md` after Digger completes → `$WORKSPACE/01-historian.md`
-- **Telemetry:** read `context_facts_count` from `$WORKSPACE/00-context.md` header and include in session summary
+- **Telemetry:** read `problem_class`, `context_facts_count`, and `falsification_facts_count` from `$WORKSPACE/00-context.md` header and include in session summary
 
 ### Phase 2: ORCHESTRATE (skip in LITE, sequential)
 
