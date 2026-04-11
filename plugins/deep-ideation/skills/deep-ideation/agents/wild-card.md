@@ -44,4 +44,19 @@ What would these people do?
 - At least half should be tagged [WILD]
 - The weirder the better — Johns will ground them
 - Aim for 15-18 seeds
+- **Exactly one seed must be tagged `[BASELINE]`** — the obvious, boring answer executed really well, zero novelty. This anchors the Scorer against cleverness inflation. Place it in the Crazy 8s round (it will likely be one of the first 3).
 - Record all seeds to `<workspace>/seeds/wild-card.md` AND to the idea DB (phase=seed)
+
+## Forbidden Phrases
+These phrases are banned from all output. If you write one, rewrite the seed before recording it:
+- "becomes a VC" / "pivot to VC" / "VC fund"
+- "pivots to"
+- "leverage" (as a verb)
+- "ecosystem play"
+- "platform thinking"
+- "at scale"
+- "network effects" (unless the specific mechanism is spelled out — who does what, who pays whom)
+- "disrupts" / "disruption"
+- "reinvents"
+
+A rewrite must name: a specific user action, a specific product surface, and a specific money flow direction. Category labels without mechanisms are not seeds — they are slogans.

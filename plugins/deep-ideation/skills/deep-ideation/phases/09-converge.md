@@ -1,10 +1,40 @@
 # Phase 9: CONVERGE
 
-Three-part convergence: Filter → Validate → Decide. Optionally: Round 2.
+Three-part convergence: Operator Capacity → Filter → Validate → Decide. Optionally: Round 2.
+
+## Part 0: Operator Capacity Check (REQUIRED — runs before any filtering)
+
+Before presenting ideas, establish the operator's execution capacity. The final recommendation is blocked if it exceeds these constraints.
+
+```
+AskUserQuestion:
+  question: "Before I filter to your best options, I need to understand your execution capacity for the next 30 days:
+
+    1. **People**: How many people are executing on this? (just you, or a team — and if a team, how many?)
+    2. **Time**: How many hours per week can you personally dedicate?
+    3. **Cash**: What is your available budget to deploy (€/$ rough estimate)?"
+  header: "Capacity"
+  options:
+    - "Solo — ~5 hrs/week — €0 (bootstrap)"
+    - "Solo — ~20 hrs/week — <€500"
+    - "Small team (2-3) — part-time — €500-5k"
+    - "Small team (2-3) — full-time — €5k+"
+    - "Let me enter custom numbers"
+```
+
+Record the operator constraint:
+```bash
+python scripts/idea_db.py add_column <workspace> capacity_people --default ""
+python scripts/idea_db.py add_column <workspace> capacity_hrs_week --default ""
+python scripts/idea_db.py add_column <workspace> capacity_cash --default ""
+python scripts/idea_db.py set_session <workspace> capacity_people "[N]"
+python scripts/idea_db.py set_session <workspace> capacity_hrs_week "[N]"
+python scripts/idea_db.py set_session <workspace> capacity_cash "[amount]"
+```
 
 ## Part 1: Decision Tree
 
-Walk the user through a brief decision tree to narrow ideas to the 2-3 that fit their specific situation.
+Walk the user through a brief decision tree to narrow ideas to the best fit for their situation.
 
 ```
 AskUserQuestion:
@@ -13,9 +43,8 @@ AskUserQuestion:
     1. Time horizon: when do you need to see results?
     2. Authority: what can you act on unilaterally vs. needs approval?
     3. Risk appetite: are you optimizing for safety, upside, or balanced?
-    4. Existing constraints: what resources do you have available?
 
-    Based on your answers, I'll highlight the most relevant ideas from each Menu bucket."
+    Based on your answers and your capacity ([N] people, [N] hrs/week, [cash]), I'll highlight your Primary direction and one Backup."
   header: "Filter"
   options:
     - "Fast results (< 2 weeks) + unilateral + safe"
@@ -24,11 +53,11 @@ AskUserQuestion:
     - "Walk me through the questions one at a time"
 ```
 
-After responses, apply the filter and present the 2-3 best-fit ideas from the Idea Menu.
+After responses, apply the filter and present exactly **one Primary direction + one Backup** from the Idea Menu. Do not recommend three concurrent initiatives — a solo operator cannot execute them in parallel within 30 days.
 
-## Part 2: Review Proof Search Findings
+## Part 2: Review Proof Search Findings + Capacity Budget
 
-Present the proof search results (or queries to run) from Phase 8 for the top 2-3 ideas:
+Present the proof search results (or queries to run) from Phase 8 for the Primary and Backup ideas:
 
 For each surviving idea:
 - **Market evidence**: what competitors exist, what they charge, how many reviews
@@ -36,20 +65,36 @@ For each surviving idea:
 - **Failure evidence**: why similar ideas failed (if found — this is the most valuable data)
 - **Verdict**: Market validated / Unvalidated / Counter-evidence found
 
+Then present the **Capacity Budget Table** for the Primary direction. The recommendation is blocked if the Primary exceeds the operator's stated capacity.
+
+```
+**Capacity Budget — Primary Direction: [Idea Name]**
+
+| Resource | Required (30 days) | Operator Budget | Fits? |
+|----------|-------------------|-----------------|-------|
+| Hours/week | [estimate] | [operator input] | ✓/✗ |
+| Cash | [estimate] | [operator input] | ✓/✗ |
+| People | [estimate] | [operator input] | ✓/✗ |
+
+If any row is ✗: switch Primary and Backup, or flag as over-capacity.
+```
+
 ```
 AskUserQuestion:
-  question: "Here are your top ideas with proof search findings:
+  question: "Here are your top directions with proof search findings:
 
-    1. [Idea #1]: [verdict]. [key finding — e.g., '5 competitors found charging €40-80, 200+ reviews']
-    2. [Idea #2]: [verdict]. [key finding — e.g., 'no competitors but strong demand signals on Reddit']
-    3. [Idea #3]: [verdict]. [key finding — e.g., 'similar product failed in 2023 — reason: distribution']
+    PRIMARY — [Idea #1]: [verdict]. [key finding]
+    Capacity fit: [hours]/wk, [cash], [people] — [FITS / OVER BUDGET]
+
+    BACKUP — [Idea #2]: [verdict]. [key finding]
+    Capacity fit: [hours]/wk, [cash], [people] — [FITS / OVER BUDGET]
 
     What would you like to do?"
   header: "Decision"
   options:
-    - "Act on #1 — the evidence is strong"
-    - "Research #2 deeper — promising but unvalidated"
-    - "Combine a few ideas first, then validate"
+    - "Act on Primary — the evidence is strong and it fits my capacity"
+    - "Switch to Backup — Primary is over budget"
+    - "Research Primary deeper — promising but unvalidated"
     - "I need to think — save everything"
     - "Start a Round 2 — I want to explore [direction] deeper"
 ```
@@ -96,11 +141,16 @@ python scripts/idea_db.py describe <workspace>
 python scripts/idea_db.py add_column <workspace> proof_verdict --default ""
 python scripts/idea_db.py add_column <workspace> selected --default "no"
 python scripts/idea_db.py add_column <workspace> user_action --default ""
+python scripts/idea_db.py add_column <workspace> convergence_role --default ""
 
 # Record proof search verdicts for top ideas
 python scripts/idea_db.py set <workspace> <id> proof_verdict "validated"
 python scripts/idea_db.py set <workspace> <id> proof_verdict "unvalidated"
 python scripts/idea_db.py set <workspace> <id> proof_verdict "counter-evidence"
+
+# Mark Primary and Backup roles
+python scripts/idea_db.py set <workspace> <id> convergence_role "primary"
+python scripts/idea_db.py set <workspace> <id> convergence_role "backup"
 
 # Mark ideas the user selected
 python scripts/idea_db.py set <workspace> <id> selected "yes"
@@ -110,9 +160,12 @@ python scripts/idea_db.py set <workspace> <id> user_action "act_on"
 python scripts/idea_db.py set <workspace> <id> user_action "research_deeper"
 python scripts/idea_db.py set <workspace> <id> user_action "combine"
 python scripts/idea_db.py set <workspace> <id> user_action "saved_for_later"
+
+# Log capacity_fit telemetry: "fit" if Primary fits operator capacity, "over_budget" if switched
+python scripts/idea_db.py telemetry <workspace> capacity_fit "fit"   # or "over_budget"
 ```
 
-This ensures the Historian in future sessions can see not just which ideas scored well, but which ones the user actually chose to act on.
+This ensures the Historian in future sessions can see not just which ideas scored well, but which ones the user actually chose to act on — and whether the recommendation fit within their execution reality.
 
 ## Saving the Session
 
@@ -147,10 +200,12 @@ The Historian will scan these files in future sessions.
 ## Output Requirements
 
 Return a short summary to the orchestrator containing:
-1. **Filtered ideas**: the 2-3 best-fit ideas based on user's constraints
-2. **Proof search verdicts**: Market validated / Unvalidated / Counter-evidence per idea
-3. **User's decision**: which idea(s) to act on
-4. **Round 2 decision** (DEEP mode): whether to run a second round, and if so, the new direction
+1. **Operator capacity**: people, hrs/week, cash
+2. **Primary direction**: the single best-fit idea, with proof search verdict and capacity fit status
+3. **Backup direction**: the fallback idea, with proof search verdict and capacity fit status
+4. **Capacity Budget Table**: estimated hours, cash, and headcount for the Primary direction over 30 days
+5. **User's decision**: which direction to act on
+6. **Round 2 decision** (DEEP mode): whether to run a second round, and if so, the new direction
 
 See `references/output-rules.md` for mandatory idea description and CSV column rules.
 

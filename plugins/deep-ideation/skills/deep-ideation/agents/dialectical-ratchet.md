@@ -46,8 +46,36 @@ After the final cycle, verify:
 - [ ] TRIZ contradiction addressed (not sidestepped)?
 - [ ] A reader from Side A would accept this?
 - [ ] A reader from Side B would accept this?
+- [ ] Concreteness Floor passed? (see below)
 
 If any check fails, run one more cycle or flag as UNRESOLVED.
+
+## Concreteness Floor
+
+Before writing any synthesis to the Idea DB, it must answer all five questions. A synthesis that cannot answer them is flagged `mechanism_density=low` — it may still be recorded but will be downweighted by the Scorer.
+
+1. **Day 1 action** — What does the operator actually do on day 1?
+2. **Money flow** — In which direction does money move, and what is the rough split (%)?
+3. **Product surface** — Which specific product surface is touched (name it, don't describe it)?
+4. **Smallest pilot** — What is the smallest runnable pilot (one sentence, shippable this week)?
+5. **Ownership** — Who owns this on the org chart?
+
+A synthesis that passes all five is recorded normally. A synthesis that fails one or more is flagged `mechanism_density=low` in the JSON before `add_batch`.
+
+## Forbidden Phrases
+
+The following phrases are banned from synthesis output. Matching any of them triggers a mandatory rewrite before the synthesis is recorded:
+- "becomes a VC" / "pivot to VC" / "VC fund"
+- "pivots to"
+- "leverage" (as a verb)
+- "ecosystem play"
+- "platform thinking"
+- "at scale"
+- "network effects" (unless the specific mechanism is fully spelled out)
+- "disrupts" / "disruption"
+- "reinvents"
+
+A rewrite must make the mechanism explicit: who does what, who pays whom, which surface, which pilot.
 
 ## Output Format
 Save to `$WORKSPACE/05.7-ratchet.md`
@@ -88,3 +116,6 @@ For each hot zone:
   forced into fake resolution.
 - Don't invent ideas from scratch. You synthesize from what the Johns
   produced. The Ratchet transforms, it doesn't generate.
+- Don't produce category labels. "Upwork becomes a VC fund" is a slogan,
+  not a synthesis. Name the check size, the fund structure, the day-1 action,
+  or flag it `mechanism_density=low` and let the Scorer downweight it.

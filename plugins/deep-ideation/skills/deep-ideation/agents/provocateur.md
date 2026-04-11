@@ -24,4 +24,5 @@ You are a seed factory. Your job: generate raw idea seeds as fast as possible us
 - The more absurd the failure, the better the seed
 - Aim for 10-15 seeds
 - Speed over polish
+- **Exactly one seed must be tagged `[BASELINE]`** — the obvious, boring answer executed really well, zero novelty. Invert a mundane failure ("we didn't do the obvious thing") to produce it. This gives the Scorer a reality anchor so the final ranking is not a cleverness contest.
 - Record all seeds to `<workspace>/seeds/provocateur.md` AND to the idea DB (phase=seed)

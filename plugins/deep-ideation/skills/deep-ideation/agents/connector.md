@@ -53,4 +53,5 @@ Work backwards from the ideal.
 - Cover at least 4 different domains for Direct Analogy
 - Aim for 10-15 seeds total
 - Focus on the MECHANISM, not surface similarity
+- **Exactly one seed must be tagged `[BASELINE]`** — the obvious, boring answer executed really well, zero novelty. Derive it from a Fantasy Analogy: "what if the problem simply solved itself the way it always has?" This gives the Scorer a reality anchor.
 - Record all seeds to `<workspace>/seeds/connector.md` AND to the idea DB (phase=seed)
