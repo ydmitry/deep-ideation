@@ -84,6 +84,28 @@ AskUserQuestion:
 5. Skip Brainwriter + Tension Analyzer (faster)
 6. Synthesizer produces merged output
 
+## Ranking in Converge
+
+Sort by `composite_score` (not `total_score`). This is the single authoritative ranking — it already incorporates the Scorer's weighted average, the Stress-Tester's resilience multiplier, and the Brilliance multiplier. No manual reconciliation of three competing lists is needed.
+
+Show Z-scores alongside raw scores so the user can see where each idea sits relative to the cohort distribution:
+
+```bash
+# Primary ranking — sort by composite_score
+python scripts/idea_db.py top <workspace> composite_score --n 10
+
+# Export full ranked table with all score dimensions visible
+python scripts/idea_db.py export_md <workspace> \
+  --columns "id,name,total_score,z_score,stress_multiplier,brilliance_multiplier,composite_score,menu_bucket" \
+  --sort composite_score --desc
+```
+
+Original per-dimension scores (e.g., `feasibility`, `novelty`) and `evidence_ref` remain in the CSV and are inspectable at any time:
+
+```bash
+python scripts/idea_db.py show <workspace> --columns "id,name,feasibility,novelty,[session-criteria],evidence_ref,score_notes"
+```
+
 ## Recording Decisions in CSV
 
 Before saving, run `describe` to see available columns, then record the user's decisions:
@@ -151,6 +173,7 @@ Return a short summary to the orchestrator containing:
 2. **Proof search verdicts**: Market validated / Unvalidated / Counter-evidence per idea
 3. **User's decision**: which idea(s) to act on
 4. **Round 2 decision** (DEEP mode): whether to run a second round, and if so, the new direction
+5. **Context grounding** (if `$WORKSPACE/00-context.md` has `context_facts_count > 0`): cite at least one fact from `00-context.md` in the final recommendation rationale, including source type and confidence. Format: `[Fact text] (Source: URL | type: [source_type] | date: [YYYY-MM-DD] | confidence: [strong/moderate/weak])`. When `adversarial_facts_count > 0`, cite at least one adversarial fact *alongside* confirming ones — tension between evidence is more informative than consensus. But present each adversarial fact as **one specific documented case**, never as proof that a category of idea won't work: most failures are not documented (survivorship bias), so what the scout found is a biased sliver, not a base rate.
 
 See `references/output-rules.md` for mandatory idea description and CSV column rules.
 

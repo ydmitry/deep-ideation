@@ -24,6 +24,10 @@ Usage:
     python idea_db.py slice <workspace> --ids 1-50          # Get ideas by ID range (for parallel splits)
     python idea_db.py slice <workspace> --offset 0 --limit 50  # Get ideas by offset+limit
     python idea_db.py slice <workspace> --phase build --ids 60-80  # Filter by phase, then slice
+    python idea_db.py compute_composite <workspace>                 # composite_score = total_score * stress_multiplier * brilliance_multiplier
+    python idea_db.py compute_zscores <workspace> [--source composite_score] [--target z_score]  # Z-scores across cohort
+    python idea_db.py validate_evidence_refs <workspace> <json_file>   # Validate evidence_ref fields cite valid IDs (blocks write on failure)
+    python idea_db.py scorer_drop_log <workspace> <json_file>          # Write scorer_drop_log.md with excluded ideas + reason codes
     python idea_db.py mark_favorites <workspace> --ids "1,3,7"     # Set user_favorites=true for given IDs (Phase 5.8)
 """
 
@@ -52,6 +56,7 @@ def get_lock_path(workspace):
 READ_ONLY_COMMANDS = frozenset({
     "describe", "size", "slice", "filter", "filter_above",
     "top", "stats", "show", "export_md", "unscored",
+    "validate_evidence_refs",
 })
 
 
@@ -606,6 +611,10 @@ def cmd_mark_favorites(args):
             row["user_favorites"] = ""
 
     ids_to_mark = {s.strip() for s in args.ids.split(",") if s.strip()}
+    if not ids_to_mark:
+        print("Warning: no IDs provided (--ids was empty).", file=sys.stderr)
+        return
+
     id_map = {row["id"]: row for row in rows}
 
     marked = []
@@ -621,6 +630,199 @@ def cmd_mark_favorites(args):
     print(f"Marked {len(marked)} ideas as favorites: {', '.join(f'#{i}' for i in sorted(marked, key=int))}")
     if missing:
         print(f"Warning: IDs not found: {', '.join(missing)}", file=sys.stderr)
+
+
+def cmd_compute_composite(args):
+    """Compute composite_score = total_score * stress_multiplier * brilliance_multiplier.
+
+    Missing multiplier columns default to 1.0. Ensures composite_score column exists.
+    """
+    columns, rows = read_db(args.workspace)
+
+    if "composite_score" not in columns:
+        columns.append("composite_score")
+        for row in rows:
+            row["composite_score"] = ""
+
+    computed = 0
+    for row in rows:
+        raw_total = row.get("total_score", "").strip()
+        if not raw_total:
+            continue
+        try:
+            total = float(raw_total)
+        except (ValueError, TypeError):
+            continue
+
+        try:
+            stress_mult = float(row.get("stress_multiplier", "").strip() or 1.0)
+        except (ValueError, TypeError):
+            stress_mult = 1.0
+
+        try:
+            brilliance_mult = float(row.get("brilliance_multiplier", "").strip() or 1.0)
+        except (ValueError, TypeError):
+            brilliance_mult = 1.0
+
+        row["composite_score"] = f"{total * stress_mult * brilliance_mult:.3f}"
+        computed += 1
+
+    write_db(args.workspace, columns, rows)
+    print(f"Computed composite_score for {computed}/{len(rows)} ideas")
+    print("Formula: total_score * stress_multiplier * brilliance_multiplier")
+    print("(missing multipliers default to 1.0)")
+
+
+def cmd_compute_zscores(args):
+    """Compute Z-scores for a given column across the scored cohort.
+
+    Usage:
+        idea_db.py compute_zscores <workspace> --source composite_score --target z_score
+    """
+    import math
+
+    columns, rows = read_db(args.workspace)
+    source = args.source
+    target = args.target or "z_score"
+
+    if source not in columns:
+        print(f"Error: Source column '{source}' does not exist.", file=sys.stderr)
+        sys.exit(1)
+
+    if target not in columns:
+        columns.append(target)
+        for row in rows:
+            row[target] = ""
+
+    values = []
+    for row in rows:
+        try:
+            values.append(float(row.get(source, "").strip()))
+        except (ValueError, TypeError):
+            pass
+
+    if len(values) < 2:
+        print(f"Error: Need at least 2 scored ideas to compute Z-scores (found {len(values)}).",
+              file=sys.stderr)
+        sys.exit(1)
+
+    mean = sum(values) / len(values)
+    variance = sum((v - mean) ** 2 for v in values) / len(values)
+    std = math.sqrt(variance)
+
+    if std == 0:
+        print("Warning: All values are identical — Z-scores will be 0.000 for all.", file=sys.stderr)
+
+    computed = 0
+    for row in rows:
+        try:
+            val = float(row.get(source, "").strip())
+            row[target] = f"{(val - mean) / std:.3f}" if std > 0 else "0.000"
+            computed += 1
+        except (ValueError, TypeError):
+            pass
+
+    write_db(args.workspace, columns, rows)
+    print(f"Computed Z-scores for {computed}/{len(rows)} ideas")
+    print(f"Source: '{source}', Target: '{target}'")
+    print(f"Cohort: mean={mean:.3f}, std={std:.3f}")
+
+
+def cmd_validate_evidence_refs(args):
+    """Validate that evidence_ref fields in a batch JSON cite valid idea IDs.
+
+    Usage:
+        idea_db.py validate_evidence_refs <workspace> <json_file>
+
+    Checks that any '#N' patterns in evidence_ref fields reference existing idea IDs.
+    Exits non-zero if any refs are missing or invalid — blocks the subsequent write.
+    """
+    import re
+
+    columns, rows = read_db(args.workspace)
+    valid_ids = {row["id"] for row in rows}
+
+    with open(args.json_file, "r") as f:
+        batch = json.load(f)
+
+    errors = []
+    for entry in batch:
+        idea_id = str(entry.get("id", "?"))
+        evidence = str(entry.get("evidence_ref", "")).strip()
+        if not evidence:
+            errors.append(f"  Idea #{idea_id}: evidence_ref is empty or missing")
+            continue
+        for ref in re.findall(r'#(\d+)', evidence):
+            if ref not in valid_ids:
+                errors.append(f"  Idea #{idea_id}: evidence_ref cites #'{ref}' which does not exist in DB")
+
+    if errors:
+        print(f"EVIDENCE REF VALIDATION FAILED — {len(errors)} error(s):", file=sys.stderr)
+        for e in errors:
+            print(e, file=sys.stderr)
+        print("\nFix evidence_ref fields before running set_batch.", file=sys.stderr)
+        sys.exit(1)
+
+    filled = sum(1 for e in batch if str(e.get("evidence_ref", "")).strip())
+    print(f"Evidence refs OK: {filled}/{len(batch)} ideas have refs, all cited IDs exist.")
+
+
+def cmd_scorer_drop_log(args):
+    """Write scorer_drop_log.md listing cohort ideas excluded from scoring with reason codes.
+
+    Usage:
+        idea_db.py scorer_drop_log <workspace> <json_file>
+
+    JSON format:
+        [{"id": 1, "reason": "phase_excluded|low_quality|duplicate|no_description|other"}]
+
+    Reason codes:
+        phase_excluded  — phase not in scorer cohort
+        low_quality     — insufficient description to score reliably
+        duplicate       — near-duplicate of another scored idea
+        no_description  — description field is empty
+        other           — reason noted in optional "note" field
+    """
+    columns, rows = read_db(args.workspace)
+    id_map = {row["id"]: row for row in rows}
+
+    with open(args.json_file, "r") as f:
+        drops = json.load(f)
+
+    reason_labels = {
+        "phase_excluded": "Phase not in scorer cohort",
+        "low_quality": "Insufficient description to score",
+        "duplicate": "Near-duplicate of another idea",
+        "no_description": "Missing description",
+        "other": "Other",
+    }
+
+    log_path = os.path.join(args.workspace, "scorer_drop_log.md")
+    lines = [
+        "# Scorer Drop Log\n",
+        "Ideas from the expanded cohort excluded from scoring.\n",
+        f"Total excluded: {len(drops)}\n",
+        "",
+        "| ID | Idea | Phase | Reason | Code |",
+        "|-----|------|-------|--------|------|",
+    ]
+
+    for drop in drops:
+        idea_id = str(drop.get("id", "?"))
+        row = id_map.get(idea_id, {})
+        name = drop.get("name", row.get("name", "Unknown"))
+        phase = row.get("phase", "?")
+        code = drop.get("reason", "other")
+        note = drop.get("note", "")
+        label = reason_labels.get(code, code)
+        if note:
+            label = f"{label} — {note}"
+        lines.append(f"| #{idea_id} | {name} | {phase} | {label} | `{code}` |")
+
+    with open(log_path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    print(f"Wrote scorer_drop_log.md: {len(drops)} excluded ideas → {log_path}")
 
 
 def cmd_export_md(args):
@@ -771,8 +973,33 @@ def main():
     p.add_argument("workspace")
     p.add_argument("column")
 
+    # compute_composite
+    p = subparsers.add_parser("compute_composite",
+        help="Compute composite_score = total_score * stress_multiplier * brilliance_multiplier")
+    p.add_argument("workspace")
+
+    # compute_zscores
+    p = subparsers.add_parser("compute_zscores",
+        help="Compute Z-scores for a column across the scored cohort")
+    p.add_argument("workspace")
+    p.add_argument("--source", default="composite_score", help="Source column (default: composite_score)")
+    p.add_argument("--target", default="z_score", help="Target column (default: z_score)")
+
+    # validate_evidence_refs
+    p = subparsers.add_parser("validate_evidence_refs",
+        help="Validate that evidence_ref fields in a batch JSON cite valid idea IDs")
+    p.add_argument("workspace")
+    p.add_argument("json_file")
+
+    # scorer_drop_log
+    p = subparsers.add_parser("scorer_drop_log",
+        help="Write scorer_drop_log.md listing excluded cohort ideas with reason codes")
+    p.add_argument("workspace")
+    p.add_argument("json_file")
+
     # mark_favorites
-    p = subparsers.add_parser("mark_favorites")
+    p = subparsers.add_parser("mark_favorites",
+        help="Mark ideas as user favorites (Phase 5.8 Taste Check)")
     p.add_argument("workspace")
     p.add_argument("--ids", required=True, help="Comma-separated idea IDs to mark as favorites, e.g. '1,3,7'")
 
@@ -789,6 +1016,10 @@ def main():
         "add_criteria": cmd_add_criteria, "compute": cmd_compute,
         "multi_filter": cmd_multi_filter, "size": cmd_size, "slice": cmd_slice,
         "describe": cmd_describe, "unscored": cmd_unscored,
+        "compute_composite": cmd_compute_composite,
+        "compute_zscores": cmd_compute_zscores,
+        "validate_evidence_refs": cmd_validate_evidence_refs,
+        "scorer_drop_log": cmd_scorer_drop_log,
         "mark_favorites": cmd_mark_favorites,
     }
 
