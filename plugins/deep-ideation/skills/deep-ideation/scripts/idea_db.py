@@ -29,6 +29,9 @@ Usage:
     python idea_db.py validate_evidence_refs <workspace> <json_file>   # Validate evidence_ref fields cite valid IDs (blocks write on failure)
     python idea_db.py scorer_drop_log <workspace> <json_file>          # Write scorer_drop_log.md with excluded ideas + reason codes
     python idea_db.py mark_favorites <workspace> --ids "1,3,7"     # Set user_favorites=true for given IDs (Phase 5.8)
+    python idea_db.py comment_add <workspace> <idea_id> --author "name" --author-type human|agent --text "..." [--parent <comment_id>]
+    python idea_db.py comment_list <workspace> [--idea-id <id>] [--author-type human|agent]
+    python idea_db.py comment_show <workspace> <idea_id>           # Full comment thread for one idea
 """
 
 import argparse
@@ -37,7 +40,9 @@ import json
 import os
 import sys
 import time
+import uuid
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -71,6 +76,10 @@ DB_FILENAME = "ideas.csv"
 LOCK_FILENAME = "ideas.csv.lock"
 BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase"]
 
+COMMENTS_FILENAME = "comments.csv"
+COMMENTS_LOCK_FILENAME = "comments.csv.lock"
+COMMENTS_COLUMNS = ["id", "idea_id", "author", "author_type", "ts", "text", "parent_comment_id"]
+
 
 def get_db_path(workspace):
     return os.path.join(workspace, DB_FILENAME)
@@ -80,11 +89,22 @@ def get_lock_path(workspace):
     return os.path.join(workspace, LOCK_FILENAME)
 
 
+def get_comments_path(workspace):
+    return os.path.join(workspace, COMMENTS_FILENAME)
+
+
+def get_comments_lock_path(workspace):
+    return os.path.join(workspace, COMMENTS_LOCK_FILENAME)
+
+
 READ_ONLY_COMMANDS = frozenset({
     "describe", "size", "slice", "filter", "filter_above",
     "top", "stats", "show", "export_md", "unscored",
     "validate_evidence_refs",
+    "comment_list", "comment_show",
 })
+
+COMMENT_COMMANDS = frozenset({"comment_add", "comment_list", "comment_show"})
 
 
 @contextmanager
@@ -126,6 +146,54 @@ def write_db(workspace, columns, rows):
         writer = csv.DictWriter(f, fieldnames=columns)
         writer.writeheader()
         writer.writerows(rows)
+
+
+@contextmanager
+def locked_comments(workspace, *, shared=False):
+    lock_path = get_comments_lock_path(workspace)
+    if not os.path.exists(lock_path):
+        try:
+            with open(lock_path, "x") as f:
+                f.write("\0")
+        except FileExistsError:
+            pass
+    lock_fd = open(lock_path, "r+")
+    try:
+        _acquire_lock(lock_fd, shared)
+        yield
+    finally:
+        _release_lock(lock_fd)
+        lock_fd.close()
+
+
+def read_comments(workspace):
+    comments_path = get_comments_path(workspace)
+    if not os.path.exists(comments_path):
+        return []
+    with open(comments_path, "r", newline="") as f:
+        reader = csv.DictReader(f)
+        return list(reader)
+
+
+def write_comments(workspace, comments):
+    comments_path = get_comments_path(workspace)
+    with open(comments_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=COMMENTS_COLUMNS)
+        writer.writeheader()
+        writer.writerows(comments)
+
+
+def _build_comment_tree(comments):
+    """Return (top_level, replies) for a flat list of comments.
+    top_level: comments with no parent, in original order.
+    replies: {parent_id: [child_comments]} for threading."""
+    top_level = [c for c in comments if not c.get("parent_comment_id")]
+    replies = {}
+    for c in comments:
+        pid = c.get("parent_comment_id")
+        if pid:
+            replies.setdefault(pid, []).append(c)
+    return top_level, replies
 
 
 def next_id(rows):
@@ -361,11 +429,23 @@ def cmd_stats(args):
 
 def cmd_show(args):
     columns, rows = read_db(args.workspace)
+
+    comment_counts = {}
+    if os.path.exists(get_comments_path(args.workspace)):
+        for c in read_comments(args.workspace):
+            comment_counts[c["idea_id"]] = comment_counts.get(c["idea_id"], 0) + 1
+
     if args.columns:
         show_cols = [c.strip() for c in args.columns.split(",")]
-        show_cols = [c for c in show_cols if c in columns]
+        show_cols = [c for c in show_cols if c in columns or c == "comment_count"]
     else:
-        show_cols = columns
+        show_cols = list(columns)
+        if comment_counts:
+            show_cols.append("comment_count")
+
+    for row in rows:
+        if comment_counts:
+            row["comment_count"] = str(comment_counts.get(row.get("id", ""), 0))
 
     # Print header
     header = " | ".join(show_cols)
@@ -880,6 +960,82 @@ def cmd_scorer_drop_log(args):
     print(f"Wrote scorer_drop_log.md: {len(drops)} excluded ideas → {log_path}")
 
 
+def cmd_comment_add(args):
+    _, rows = read_db(args.workspace)
+    idea_ids = {r["id"] for r in rows}
+    if str(args.idea_id) not in idea_ids:
+        print(f"Error: idea #{args.idea_id} does not exist.", file=sys.stderr)
+        sys.exit(1)
+    if args.parent:
+        comments = read_comments(args.workspace)
+        if not any(c["id"] == args.parent for c in comments):
+            print(f"Error: parent comment '{args.parent}' does not exist.", file=sys.stderr)
+            sys.exit(1)
+    comment_id = uuid.uuid4().hex[:12]
+    new_comment = {
+        "id": comment_id,
+        "idea_id": str(args.idea_id),
+        "author": args.author,
+        "author_type": args.author_type,
+        "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "text": args.text,
+        "parent_comment_id": args.parent or "",
+    }
+    comments_path = get_comments_path(args.workspace)
+    if not os.path.exists(comments_path):
+        with open(comments_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=COMMENTS_COLUMNS)
+            writer.writeheader()
+    with open(comments_path, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=COMMENTS_COLUMNS)
+        writer.writerow(new_comment)
+    print(f"Comment {comment_id} added to idea #{args.idea_id}")
+
+
+def cmd_comment_list(args):
+    comments = read_comments(args.workspace)
+    if not comments:
+        print("No comments found.")
+        return
+    if args.idea_id:
+        comments = [c for c in comments if c["idea_id"] == str(args.idea_id)]
+    if args.author_type:
+        comments = [c for c in comments if c["author_type"] == args.author_type]
+    if not comments:
+        print("No comments match the filter.")
+        return
+    for c in comments:
+        parent = f" (reply to {c['parent_comment_id']})" if c["parent_comment_id"] else ""
+        print(f"[{c['id']}] idea #{c['idea_id']} | {c['author']} ({c['author_type']}) | {c['ts']}{parent}")
+        print(f"  {c['text']}")
+
+
+def cmd_comment_show(args):
+    comments = read_comments(args.workspace)
+    thread = [c for c in comments if c["idea_id"] == str(args.idea_id)]
+    if not thread:
+        print(f"No comments for idea #{args.idea_id}.")
+        return
+    _, rows = read_db(args.workspace)
+    idea = next((r for r in rows if r["id"] == str(args.idea_id)), None)
+    if idea:
+        print(f"Idea #{args.idea_id}: {idea.get('name', '')}")
+        print()
+    top_level, replies = _build_comment_tree(thread)
+
+    def _print_thread(comment, indent=0):
+        prefix = "  " * indent
+        badge = "human" if comment["author_type"] == "human" else "agent"
+        print(f"{prefix}[{badge}] {comment['author']} — {comment['ts']}")
+        print(f"{prefix}  {comment['text']}")
+        for reply in replies.get(comment["id"], []):
+            _print_thread(reply, indent + 1)
+
+    for c in top_level:
+        _print_thread(c)
+        print()
+
+
 def cmd_export_md(args):
     columns, rows = read_db(args.workspace)
     if args.columns:
@@ -897,12 +1053,32 @@ def cmd_export_md(args):
                 return val
         rows = sorted(rows, key=sort_key, reverse=args.desc)
 
+    all_comments = read_comments(args.workspace)
+    comments_by_idea = {}
+    for c in all_comments:
+        comments_by_idea.setdefault(c["idea_id"], []).append(c)
+
     # Markdown table
     print("| " + " | ".join(show_cols) + " |")
     print("| " + " | ".join(["---"] * len(show_cols)) + " |")
     for row in rows:
         vals = [str(row.get(c, "")).replace("|", "\\|") for c in show_cols]
         print("| " + " | ".join(vals) + " |")
+        idea_comments = comments_by_idea.get(row.get("id", ""), [])
+        if idea_comments:
+            top_level, replies = _build_comment_tree(idea_comments)
+
+            def _render_comment(comment, depth=0):
+                indent = "  " * depth + "> "
+                badge = "human" if comment["author_type"] == "human" else "agent"
+                print(f"{indent}**[{badge}] {comment['author']}** ({comment['ts']}): {comment['text']}")
+                for reply in replies.get(comment["id"], []):
+                    _render_comment(reply, depth + 1)
+
+            print()
+            for c in top_level:
+                _render_comment(c)
+            print()
 
 
 def main():
@@ -1058,6 +1234,29 @@ def main():
     p.add_argument("workspace")
     p.add_argument("--ids", required=True, help="Comma-separated idea IDs to mark as favorites, e.g. '1,3,7'")
 
+    # comment add
+    p = subparsers.add_parser("comment_add",
+        help="Add a comment to an idea")
+    p.add_argument("workspace")
+    p.add_argument("idea_id", type=int)
+    p.add_argument("--author", required=True)
+    p.add_argument("--author-type", required=True, choices=["human", "agent"], dest="author_type")
+    p.add_argument("--text", required=True)
+    p.add_argument("--parent", default="", help="Parent comment ID for threading")
+
+    # comment list
+    p = subparsers.add_parser("comment_list",
+        help="List comments, optionally filtered by idea or author type")
+    p.add_argument("workspace")
+    p.add_argument("--idea-id", type=int, default=None, dest="idea_id")
+    p.add_argument("--author-type", default=None, choices=["human", "agent"], dest="author_type")
+
+    # comment show
+    p = subparsers.add_parser("comment_show",
+        help="Show full comment thread for one idea")
+    p.add_argument("workspace")
+    p.add_argument("idea_id", type=int)
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -1076,13 +1275,17 @@ def main():
         "validate_evidence_refs": cmd_validate_evidence_refs,
         "scorer_drop_log": cmd_scorer_drop_log,
         "mark_favorites": cmd_mark_favorites,
+        "comment_add": cmd_comment_add,
+        "comment_list": cmd_comment_list,
+        "comment_show": cmd_comment_show,
     }
 
-    # All commands except init acquire a file lock so parallel agents
-    # (e.g. multiple Johns in Phase 5) don't corrupt the CSV.
-    # Read-only commands use a shared lock; write commands use exclusive.
     if args.command == "init":
         commands[args.command](args)
+    elif args.command in COMMENT_COMMANDS:
+        shared = args.command in READ_ONLY_COMMANDS
+        with locked_comments(args.workspace, shared=shared):
+            commands[args.command](args)
     else:
         shared = args.command in READ_ONLY_COMMANDS
         with locked_db(args.workspace, shared=shared):
