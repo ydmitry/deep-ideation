@@ -3,11 +3,11 @@
 Idea Database — CSV-based idea tracking for deep-ideation skill.
 
 Every idea is a row. Columns can be added dynamically for evaluation.
-Built-in columns: id, name, description, source_agent, source_seed, chain, tag, phase
+Built-in columns: id, name, description, source_agent, source_seed, chain, tag, phase, created_at
 
 Usage:
     python idea_db.py init <workspace>                    # Create empty idea DB
-    python idea_db.py add <workspace> --name "..." --description "..." --source_agent "..." [--source_seed "..."] [--chain "..."] [--tag SAFE|BOLD|WILD] [--phase seed|transform|build|tension|synthesis]
+    python idea_db.py add <workspace> --name "..." --description "..." --source_agent "..." [--source_seed "..."] [--chain "..."] [--tag SAFE|BOLD|WILD] [--phase seed|transform|build|tension|synthesis]  # created_at auto-set to UTC now
     python idea_db.py add_batch <workspace> <json_file>   # Add multiple ideas from JSON
     python idea_db.py add_column <workspace> <column_name> [--default ""]  # Add a new evaluation column
     python idea_db.py set <workspace> <id> <column> <value>               # Set a value for an idea
@@ -74,7 +74,7 @@ except ImportError:
 
 DB_FILENAME = "ideas.csv"
 LOCK_FILENAME = "ideas.csv.lock"
-BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase"]
+BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase", "created_at"]
 
 COMMENTS_FILENAME = "comments.csv"
 COMMENTS_LOCK_FILENAME = "comments.csv.lock"
@@ -99,7 +99,7 @@ def get_comments_lock_path(workspace):
 
 READ_ONLY_COMMANDS = frozenset({
     "describe", "size", "slice", "filter", "filter_above",
-    "top", "stats", "show", "export_md", "unscored",
+    "top", "stats", "show", "export_md", "export_html", "unscored",
     "validate_evidence_refs",
     "comment_list", "comment_show",
 })
@@ -224,6 +224,7 @@ def cmd_add(args):
     row["chain"] = args.chain or ""
     row["tag"] = args.tag or ""
     row["phase"] = args.phase or ""
+    row["created_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     rows.append(row)
     write_db(args.workspace, columns, rows)
     print(f"Added idea #{new_id}: {args.name}")
@@ -243,6 +244,8 @@ def cmd_add_batch(args):
         for key, value in idea.items():
             if key in columns:
                 row[key] = str(value)
+        if not row.get("created_at"):
+            row["created_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         rows.append(row)
         added += 1
 
@@ -1081,6 +1084,326 @@ def cmd_export_md(args):
             print()
 
 
+def _build_html(payload: str, top_score_cols: list) -> str:
+    score_headers = "".join(
+        f'<div class="col score sortable" data-col="scores.{c}" data-label="{c}">{c}</div>'
+        for c in top_score_cols
+    )
+    template = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Idea Canvas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f0f2f5;color:#1a1a1a;font-size:14px}
+#app{max-width:1240px;margin:0 auto;padding:16px}
+h1{font-size:18px;font-weight:600;margin-bottom:12px;color:#333}
+#controls{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#search{flex:1;min-width:200px;padding:7px 12px;border:1px solid #ccc;border-radius:6px;font-size:14px;outline:none}
+#search:focus{border-color:#4a90d9;box-shadow:0 0 0 2px rgba(74,144,217,.15)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:4px 10px;border-radius:20px;border:1.5px solid #ccc;background:#fff;cursor:pointer;font-size:12px;font-weight:500;transition:all .15s;user-select:none}
+.chip:hover{border-color:#888}
+.chip.active.SAFE{background:#28a745;border-color:#28a745;color:#fff}
+.chip.active.BOLD{background:#fd7e14;border-color:#fd7e14;color:#fff}
+.chip.active.WILD{background:#dc3545;border-color:#dc3545;color:#fff}
+.chip.active.phase{background:#4a90d9;border-color:#4a90d9;color:#fff}
+#count{font-size:12px;color:#888;white-space:nowrap;margin-left:auto}
+#table{background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
+.thead{display:flex;align-items:center;padding:8px 12px;border-bottom:2px solid #e0e0e0;background:#f8f9fa;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:#555}
+.col{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px}
+.col.sortable{cursor:pointer;user-select:none}
+.col.sortable:hover{color:#4a90d9}
+.col.sorted{color:#4a90d9}
+.col.id{width:44px;flex-shrink:0;text-align:right}
+.col.name{flex:2;min-width:140px}
+.col.tag{width:76px;flex-shrink:0;text-align:center}
+.col.phase{width:96px;flex-shrink:0}
+.col.score{width:84px;flex-shrink:0;text-align:right}
+.col.comments{width:44px;flex-shrink:0;text-align:center}
+details.row{border-bottom:1px solid #f0f0f0}
+details.row:last-child{border-bottom:none}
+details.row>summary{display:flex;align-items:center;padding:9px 12px;cursor:pointer;list-style:none;transition:background .1s}
+details.row>summary::-webkit-details-marker{display:none}
+details.row>summary:hover{background:#f8f9fa}
+details.row[open]>summary{background:#f0f6ff;border-bottom:1px solid #dce8f7}
+.tag-pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase}
+.tag-pill.SAFE{background:#d4edda;color:#155724}
+.tag-pill.BOLD{background:#ffe8cc;color:#7d3c00}
+.tag-pill.WILD{background:#f8d7da;color:#721c24}
+.tag-pill.empty{color:#bbb}
+.score-val{font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:11px;font-weight:500}
+.badge.human{background:#dbeafe;color:#1d4ed8}
+.badge.agent{background:#f3f4f6;color:#666}
+.cc{display:inline-block;min-width:20px;text-align:center;padding:1px 5px;border-radius:10px;font-size:11px;background:#f3f4f6;color:#888}
+.cc.has{background:#dbeafe;color:#1d4ed8}
+.detail{padding:14px 16px 16px 58px;background:#fafcff}
+.description{margin-bottom:12px}
+.dl{font-size:11px;text-transform:uppercase;color:#999;letter-spacing:.4px;margin-bottom:3px}
+.dv{font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:#1a1a1a}
+.scores-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.score-chip{background:#f8f9fa;border:1px solid #e9ecef;border-radius:6px;padding:3px 9px;font-size:12px}
+.score-chip .sn{color:#888}
+.score-chip .sv{font-weight:600;color:#333;margin-left:4px}
+.prov{font-size:11px;color:#aaa;margin-bottom:10px}
+.comments-title{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#999;margin-bottom:8px}
+.comment{padding:8px 10px;border-radius:6px;border:1px solid #e9ecef;background:#fff;margin-bottom:6px}
+.comment.reply{border-left:3px solid #c3d9f7}
+.cmeta{font-size:11px;color:#999;margin-bottom:3px}
+.ctext{font-size:13px;line-height:1.4;white-space:pre-wrap;word-break:break-word}
+#empty{padding:48px;text-align:center;color:#bbb;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>Idea Canvas</h1>
+<div id="controls">
+  <input id="search" type="text" placeholder="Search name and description…" autocomplete="off">
+  <div class="chips" id="tag-chips"></div>
+  <div class="chips" id="phase-chips"></div>
+  <span id="count"></span>
+</div>
+<div id="table">
+  <div class="thead">
+    <div class="col id sortable" data-col="id" data-label="#">#</div>
+    <div class="col name sortable" data-col="name" data-label="Name">Name</div>
+    <div class="col tag">Tag</div>
+    <div class="col phase sortable" data-col="phase" data-label="Phase">Phase</div>
+    __SCORE_HEADERS__
+    <div class="col comments sortable" data-col="comment_count" data-label="💬">💬</div>
+  </div>
+  <div id="rows"></div>
+</div>
+</div>
+<script>
+const DATA=__PAYLOAD__;
+let state={sortCol:null,sortDir:-1,search:'',tags:new Set(),phases:new Set()};
+
+function esc(s){
+  if(s==null)return'';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getNumVal(idea,col){
+  if(col==='id'||col==='comment_count')return parseFloat(idea[col])||0;
+  if(col.startsWith('scores.'))return parseFloat((idea.scores||{})[col.slice(7)])||0;
+  return 0;
+}
+
+function renderComments(comments){
+  if(!comments||!comments.length)return'';
+  function rc(c,depth){
+    const badge=c.author_type==='human'
+      ?'<span class="badge human">human</span>'
+      :'<span class="badge agent">agent</span>';
+    const children=comments.filter(x=>x.parent_comment_id===c.id);
+    return`<div class="comment${depth>0?' reply':''}" style="margin-left:${depth*20}px">
+      <div class="cmeta">${badge} <strong>${esc(c.author)}</strong> · ${esc(c.ts)}</div>
+      <div class="ctext">${esc(c.text)}</div>
+      ${children.map(x=>rc(x,depth+1)).join('')}
+    </div>`;
+  }
+  const roots=comments.filter(c=>!c.parent_comment_id);
+  return`<div class="comments-title">Comments</div>${roots.map(c=>rc(c,0)).join('')}`;
+}
+
+function renderRow(idea){
+  const topCols=DATA.topScoreCols;
+  const allCols=DATA.allScoreCols;
+  const tagCls=idea.tag?` ${idea.tag}`:'';
+  const tagHtml=idea.tag
+    ?`<span class="tag-pill${tagCls}">${esc(idea.tag)}</span>`
+    :`<span class="tag-pill empty">—</span>`;
+  const scoreHtml=topCols.map(c=>{
+    const v=(idea.scores||{})[c];
+    return`<div class="col score"><span class="score-val">${v!=null&&v!==''?parseFloat(v).toFixed(1):'—'}</span></div>`;
+  }).join('');
+  const ccHtml=`<div class="col comments"><span class="cc${idea.comment_count>0?' has':''}">${idea.comment_count}</span></div>`;
+
+  const scoresExpanded=allCols.length&&idea.scores
+    ?`<div class="scores-row">${allCols.map(c=>{
+        const v=(idea.scores||{})[c];
+        return v!=null&&v!==''?`<div class="score-chip"><span class="sn">${esc(c)}</span><span class="sv">${esc(v)}</span></div>`:'';
+      }).join('')}</div>`:'';
+
+  const prov=[];
+  if(idea.source_agent)prov.push(`agent: ${esc(idea.source_agent)}`);
+  if(idea.source_seed)prov.push(`seed: #${esc(idea.source_seed)}`);
+  const provHtml=prov.length?`<div class="prov">[${prov.join(' · ')}]</div>`:'';
+
+  return`<details class="row" data-id="${idea.id}">
+  <summary>
+    <div class="col id">${esc(idea.id)}</div>
+    <div class="col name">${esc(idea.name)}</div>
+    <div class="col tag">${tagHtml}</div>
+    <div class="col phase">${esc(idea.phase||'—')}</div>
+    ${scoreHtml}${ccHtml}
+  </summary>
+  <div class="detail">
+    <div class="description"><div class="dl">Description</div><div class="dv">${esc(idea.description)}</div></div>
+    ${scoresExpanded}${provHtml}${renderComments(idea.comments)}
+  </div>
+</details>`;
+}
+
+function updateHeader(){
+  document.querySelectorAll('.thead .sortable').forEach(th=>{
+    const col=th.dataset.col;
+    const label=th.dataset.label;
+    const arrow=col===state.sortCol?(state.sortDir===1?' ▲':' ▼'):'';
+    th.textContent=label+arrow;
+    th.classList.toggle('sorted',col===state.sortCol);
+  });
+}
+
+function render(){
+  const openIds=new Set();
+  document.querySelectorAll('details[open]').forEach(d=>openIds.add(d.dataset.id));
+
+  let ideas=DATA.ideas;
+  if(state.tags.size>0)ideas=ideas.filter(i=>state.tags.has(i.tag||''));
+  if(state.phases.size>0)ideas=ideas.filter(i=>state.phases.has(i.phase||''));
+  if(state.search){
+    const q=state.search.toLowerCase();
+    ideas=ideas.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.description||'').toLowerCase().includes(q));
+  }
+  if(state.sortCol){
+    const col=state.sortCol,dir=state.sortDir;
+    const isNum=col==='id'||col==='comment_count'||col.startsWith('scores.');
+    ideas=[...ideas].sort((a,b)=>{
+      if(isNum)return dir*(getNumVal(a,col)-getNumVal(b,col));
+      const av=(a[col]||'').toLowerCase(),bv=(b[col]||'').toLowerCase();
+      return dir*(av<bv?-1:av>bv?1:0);
+    });
+  }
+
+  document.getElementById('count').textContent=`${ideas.length} / ${DATA.ideas.length} ideas`;
+  const container=document.getElementById('rows');
+  if(!ideas.length){container.innerHTML='<div id="empty">No ideas match your filters.</div>';updateHeader();return;}
+  container.innerHTML=ideas.map(renderRow).join('');
+  container.querySelectorAll('details').forEach(d=>{if(openIds.has(d.dataset.id))d.open=true;});
+  updateHeader();
+}
+
+function buildChips(){
+  const tagBar=document.getElementById('tag-chips');
+  DATA.tags.forEach(tag=>{
+    const chip=document.createElement('div');
+    chip.className=`chip ${tag}`;chip.textContent=tag;
+    chip.onclick=()=>{state.tags.has(tag)?state.tags.delete(tag):state.tags.add(tag);chip.classList.toggle('active',state.tags.has(tag));render();};
+    tagBar.appendChild(chip);
+  });
+  const phaseBar=document.getElementById('phase-chips');
+  DATA.phases.forEach(phase=>{
+    const chip=document.createElement('div');
+    chip.className='chip phase';chip.textContent=phase;
+    chip.onclick=()=>{state.phases.has(phase)?state.phases.delete(phase):state.phases.add(phase);chip.classList.toggle('active',state.phases.has(phase));render();};
+    phaseBar.appendChild(chip);
+  });
+}
+
+document.querySelectorAll('.thead .sortable').forEach(th=>{
+  th.onclick=()=>{
+    state.sortCol===th.dataset.col?state.sortDir*=-1:(state.sortCol=th.dataset.col,state.sortDir=-1);
+    render();
+  };
+});
+
+let raf=null;
+document.getElementById('search').addEventListener('input',e=>{
+  if(raf)cancelAnimationFrame(raf);
+  raf=requestAnimationFrame(()=>{state.search=e.target.value;render();});
+});
+
+buildChips();
+render();
+</script>
+</body>
+</html>"""
+    return template.replace("__PAYLOAD__", payload).replace("__SCORE_HEADERS__", score_headers)
+
+
+def cmd_export_html(args):
+    columns, rows = read_db(args.workspace)
+    all_comments = read_comments(args.workspace)
+
+    comments_by_idea = {}
+    for c in all_comments:
+        comments_by_idea.setdefault(c["idea_id"], []).append(c)
+
+    # Detect numeric score columns ordered by fill rate
+    score_cols = []
+    for col in columns:
+        if col in BUILT_IN_COLUMNS:
+            continue
+        filled_numeric = 0
+        filled_total = 0
+        for r in rows:
+            v = r.get(col, "").strip()
+            if v:
+                filled_total += 1
+                try:
+                    float(v)
+                    filled_numeric += 1
+                except ValueError:
+                    pass
+        if filled_total > 0 and filled_numeric >= filled_total * 0.5:
+            score_cols.append((col, filled_total))
+    score_cols.sort(key=lambda x: -x[1])
+    top_score_cols = [c for c, _ in score_cols[:3]]
+    all_score_cols = [c for c, _ in score_cols]
+
+    # Build compact idea objects (strip empty fields)
+    ideas = []
+    for row in rows:
+        idea_id = row.get("id", "")
+        clist = comments_by_idea.get(idea_id, [])
+        obj = {
+            "id": idea_id,
+            "name": row.get("name", ""),
+            "description": row.get("description", ""),
+            "comment_count": len(clist),
+        }
+        for k in ("tag", "phase", "source_agent", "source_seed"):
+            v = row.get(k, "")
+            if v:
+                obj[k] = v
+        scores = {c: row[c] for c in all_score_cols if row.get(c, "").strip()}
+        if scores:
+            obj["scores"] = scores
+        if clist:
+            obj["comments"] = [
+                {k: c[k] for k in ("id", "author", "author_type", "ts", "text", "parent_comment_id") if c.get(k)}
+                for c in clist
+            ]
+        ideas.append(obj)
+
+    tags = sorted({r.get("tag", "") for r in rows if r.get("tag", "")})
+    phases = sorted({r.get("phase", "") for r in rows if r.get("phase", "")})
+
+    payload = json.dumps({
+        "ideas": ideas,
+        "topScoreCols": top_score_cols,
+        "allScoreCols": all_score_cols,
+        "tags": tags,
+        "phases": phases,
+    }, ensure_ascii=False, separators=(",", ":"))
+
+    html = _build_html(payload, top_score_cols)
+
+    output_path = args.output if args.output else os.path.join(args.workspace, "ideas.html")
+    if output_path == "-":
+        print(html)
+    else:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(html)
+        size_kb = len(html.encode("utf-8")) // 1024
+        print(f"Exported {len(ideas)} ideas → {output_path} ({size_kb} KB)")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Idea Database for deep-ideation")
     subparsers = parser.add_subparsers(dest="command", help="Command")
@@ -1234,6 +1557,12 @@ def main():
     p.add_argument("workspace")
     p.add_argument("--ids", required=True, help="Comma-separated idea IDs to mark as favorites, e.g. '1,3,7'")
 
+    # export_html
+    p = subparsers.add_parser("export_html",
+        help="Export ideas and comments as a self-contained offline HTML file")
+    p.add_argument("workspace")
+    p.add_argument("--output", default="", help="Output path (default: <workspace>/ideas.html). Use - for stdout.")
+
     # comment add
     p = subparsers.add_parser("comment_add",
         help="Add a comment to an idea")
@@ -1278,6 +1607,7 @@ def main():
         "comment_add": cmd_comment_add,
         "comment_list": cmd_comment_list,
         "comment_show": cmd_comment_show,
+        "export_html": cmd_export_html,
     }
 
     if args.command == "init":
