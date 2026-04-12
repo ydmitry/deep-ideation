@@ -33,12 +33,39 @@ Usage:
 
 import argparse
 import csv
-import fcntl
 import json
 import os
 import sys
+import time
 from contextlib import contextmanager
 from pathlib import Path
+
+try:
+    import fcntl
+
+    def _acquire_lock(lock_fd, shared):
+        fcntl.flock(lock_fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
+
+    def _release_lock(lock_fd):
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+except ImportError:
+    import msvcrt
+
+    def _acquire_lock(lock_fd, shared):
+        lock_fd.seek(0)
+        while True:
+            try:
+                msvcrt.locking(lock_fd.fileno(), msvcrt.LK_NBLCK, 1)
+                return
+            except OSError:
+                time.sleep(0.05)
+
+    def _release_lock(lock_fd):
+        try:
+            lock_fd.seek(0)
+            msvcrt.locking(lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
 
 DB_FILENAME = "ideas.csv"
 LOCK_FILENAME = "ideas.csv.lock"
@@ -66,12 +93,18 @@ def locked_db(workspace, *, shared=False):
     Read-only commands use a shared lock (LOCK_SH) so they don't block each other.
     Write commands use an exclusive lock (LOCK_EX) so parallel agents don't corrupt the CSV."""
     lock_path = get_lock_path(workspace)
-    lock_fd = open(lock_path, "w")
+    if not os.path.exists(lock_path):
+        try:
+            with open(lock_path, "x") as f:
+                f.write("\0")
+        except FileExistsError:
+            pass
+    lock_fd = open(lock_path, "r+")
     try:
-        fcntl.flock(lock_fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
+        _acquire_lock(lock_fd, shared)
         yield
     finally:
-        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        _release_lock(lock_fd)
         lock_fd.close()
 
 
