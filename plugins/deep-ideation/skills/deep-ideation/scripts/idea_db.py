@@ -183,6 +183,19 @@ def write_comments(workspace, comments):
         writer.writerows(comments)
 
 
+def _build_comment_tree(comments):
+    """Return (top_level, replies) for a flat list of comments.
+    top_level: comments with no parent, in original order.
+    replies: {parent_id: [child_comments]} for threading."""
+    top_level = [c for c in comments if not c.get("parent_comment_id")]
+    replies = {}
+    for c in comments:
+        pid = c.get("parent_comment_id")
+        if pid:
+            replies.setdefault(pid, []).append(c)
+    return top_level, replies
+
+
 def next_id(rows):
     if not rows:
         return 1
@@ -1008,11 +1021,7 @@ def cmd_comment_show(args):
     if idea:
         print(f"Idea #{args.idea_id}: {idea.get('name', '')}")
         print()
-    top_level = [c for c in thread if not c["parent_comment_id"]]
-    replies = {}
-    for c in thread:
-        if c["parent_comment_id"]:
-            replies.setdefault(c["parent_comment_id"], []).append(c)
+    top_level, replies = _build_comment_tree(thread)
 
     def _print_thread(comment, indent=0):
         prefix = "  " * indent
@@ -1057,11 +1066,7 @@ def cmd_export_md(args):
         print("| " + " | ".join(vals) + " |")
         idea_comments = comments_by_idea.get(row.get("id", ""), [])
         if idea_comments:
-            top_level = [c for c in idea_comments if not c["parent_comment_id"]]
-            replies = {}
-            for c in idea_comments:
-                if c["parent_comment_id"]:
-                    replies.setdefault(c["parent_comment_id"], []).append(c)
+            top_level, replies = _build_comment_tree(idea_comments)
 
             def _render_comment(comment, depth=0):
                 indent = "  " * depth + "> "
