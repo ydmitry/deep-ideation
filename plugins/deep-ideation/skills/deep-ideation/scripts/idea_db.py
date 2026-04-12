@@ -3,11 +3,11 @@
 Idea Database — CSV-based idea tracking for deep-ideation skill.
 
 Every idea is a row. Columns can be added dynamically for evaluation.
-Built-in columns: id, name, description, source_agent, source_seed, chain, tag, phase
+Built-in columns: id, name, description, source_agent, source_seed, chain, tag, phase, created_at
 
 Usage:
     python idea_db.py init <workspace>                    # Create empty idea DB
-    python idea_db.py add <workspace> --name "..." --description "..." --source_agent "..." [--source_seed "..."] [--chain "..."] [--tag SAFE|BOLD|WILD] [--phase seed|transform|build|tension|synthesis]
+    python idea_db.py add <workspace> --name "..." --description "..." --source_agent "..." [--source_seed "..."] [--chain "..."] [--tag SAFE|BOLD|WILD] [--phase seed|transform|build|tension|synthesis]  # created_at auto-set to UTC now
     python idea_db.py add_batch <workspace> <json_file>   # Add multiple ideas from JSON
     python idea_db.py add_column <workspace> <column_name> [--default ""]  # Add a new evaluation column
     python idea_db.py set <workspace> <id> <column> <value>               # Set a value for an idea
@@ -74,7 +74,7 @@ except ImportError:
 
 DB_FILENAME = "ideas.csv"
 LOCK_FILENAME = "ideas.csv.lock"
-BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase"]
+BUILT_IN_COLUMNS = ["id", "name", "description", "source_agent", "source_seed", "chain", "tag", "phase", "created_at"]
 
 COMMENTS_FILENAME = "comments.csv"
 COMMENTS_LOCK_FILENAME = "comments.csv.lock"
@@ -99,7 +99,7 @@ def get_comments_lock_path(workspace):
 
 READ_ONLY_COMMANDS = frozenset({
     "describe", "size", "slice", "filter", "filter_above",
-    "top", "stats", "show", "export_md", "unscored",
+    "top", "stats", "show", "export_md", "export_html", "unscored",
     "validate_evidence_refs",
     "comment_list", "comment_show",
 })
@@ -224,6 +224,7 @@ def cmd_add(args):
     row["chain"] = args.chain or ""
     row["tag"] = args.tag or ""
     row["phase"] = args.phase or ""
+    row["created_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     rows.append(row)
     write_db(args.workspace, columns, rows)
     print(f"Added idea #{new_id}: {args.name}")
@@ -243,6 +244,8 @@ def cmd_add_batch(args):
         for key, value in idea.items():
             if key in columns:
                 row[key] = str(value)
+        if not row.get("created_at"):
+            row["created_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         rows.append(row)
         added += 1
 
@@ -1081,6 +1084,94 @@ def cmd_export_md(args):
             print()
 
 
+def _build_html(payload: str, top_score_cols: list) -> str:
+    score_headers = "".join(
+        f'<div class="col score sortable" data-col="scores.{c}" data-label="{c}">{c}</div>'
+        for c in top_score_cols
+    )
+    template_path = Path(__file__).parent / "ideas_template.html"
+    template = template_path.read_text(encoding="utf-8")
+    return template.replace("__PAYLOAD__", payload).replace("__SCORE_HEADERS__", score_headers)
+
+
+def cmd_export_html(args):
+    columns, rows = read_db(args.workspace)
+    all_comments = read_comments(args.workspace)
+
+    comments_by_idea = {}
+    for c in all_comments:
+        comments_by_idea.setdefault(c["idea_id"], []).append(c)
+
+    # Detect numeric score columns ordered by fill rate
+    score_cols = []
+    for col in columns:
+        if col in BUILT_IN_COLUMNS:
+            continue
+        filled_numeric = 0
+        filled_total = 0
+        for r in rows:
+            v = r.get(col, "").strip()
+            if v:
+                filled_total += 1
+                try:
+                    float(v)
+                    filled_numeric += 1
+                except ValueError:
+                    pass
+        if filled_total > 0 and filled_numeric >= filled_total * 0.5:
+            score_cols.append((col, filled_total))
+    score_cols.sort(key=lambda x: -x[1])
+    top_score_cols = [c for c, _ in score_cols[:3]]
+    all_score_cols = [c for c, _ in score_cols]
+
+    # Build compact idea objects (strip empty fields)
+    ideas = []
+    for row in rows:
+        idea_id = row.get("id", "")
+        clist = comments_by_idea.get(idea_id, [])
+        obj = {
+            "id": idea_id,
+            "name": row.get("name", ""),
+            "description": row.get("description", ""),
+            "comment_count": len(clist),
+        }
+        for k in ("tag", "phase", "source_agent", "source_seed"):
+            v = row.get(k, "")
+            if v:
+                obj[k] = v
+        scores = {c: row[c] for c in all_score_cols if row.get(c, "").strip()}
+        if scores:
+            obj["scores"] = scores
+        if clist:
+            obj["comments"] = [
+                {k: c[k] for k in ("id", "author", "author_type", "ts", "text", "parent_comment_id") if c.get(k)}
+                for c in clist
+            ]
+        ideas.append(obj)
+
+    tags = sorted({r.get("tag", "") for r in rows if r.get("tag", "")})
+    phases = sorted({r.get("phase", "") for r in rows if r.get("phase", "")})
+
+    payload = json.dumps({
+        "ideas": ideas,
+        "topScoreCols": top_score_cols,
+        "allScoreCols": all_score_cols,
+        "tags": tags,
+        "phases": phases,
+    }, ensure_ascii=False, separators=(",", ":"))
+
+    html = _build_html(payload, top_score_cols)
+
+    output_path = args.output if args.output else os.path.join(args.workspace, "ideas.html")
+    if output_path == "-":
+        print(html)
+    else:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(html)
+        size_kb = len(html.encode("utf-8")) // 1024
+        print(f"Exported {len(ideas)} ideas → {output_path} ({size_kb} KB)")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Idea Database for deep-ideation")
     subparsers = parser.add_subparsers(dest="command", help="Command")
@@ -1234,6 +1325,12 @@ def main():
     p.add_argument("workspace")
     p.add_argument("--ids", required=True, help="Comma-separated idea IDs to mark as favorites, e.g. '1,3,7'")
 
+    # export_html
+    p = subparsers.add_parser("export_html",
+        help="Export ideas and comments as a self-contained offline HTML file")
+    p.add_argument("workspace")
+    p.add_argument("--output", default="", help="Output path (default: <workspace>/ideas.html). Use - for stdout.")
+
     # comment add
     p = subparsers.add_parser("comment_add",
         help="Add a comment to an idea")
@@ -1278,6 +1375,7 @@ def main():
         "comment_add": cmd_comment_add,
         "comment_list": cmd_comment_list,
         "comment_show": cmd_comment_show,
+        "export_html": cmd_export_html,
     }
 
     if args.command == "init":
