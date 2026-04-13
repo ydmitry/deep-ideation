@@ -32,6 +32,7 @@ Usage:
     python idea_db.py comment_add <workspace> <idea_id> --author "name" --author-type human|agent --text "..." [--parent <comment_id>]
     python idea_db.py comment_list <workspace> [--idea-id <id>] [--author-type human|agent]
     python idea_db.py comment_show <workspace> <idea_id>           # Full comment thread for one idea
+    python idea_db.py apply_miro <workspace> --board "My Board" [--filter "composite_score>7"] [--group-by tag|phase|none|auto] [--dry-run]
 """
 
 import argparse
@@ -80,6 +81,9 @@ COMMENTS_FILENAME = "comments.csv"
 COMMENTS_LOCK_FILENAME = "comments.csv.lock"
 COMMENTS_COLUMNS = ["id", "idea_id", "author", "author_type", "ts", "text", "parent_comment_id"]
 
+APPLY_LOG_FILENAME = "apply_log.csv"
+APPLY_LOG_COLUMNS = ["ts", "target", "filter", "board_url", "idea_count"]
+
 
 def get_db_path(workspace):
     return os.path.join(workspace, DB_FILENAME)
@@ -102,6 +106,7 @@ READ_ONLY_COMMANDS = frozenset({
     "top", "stats", "show", "export_md", "export_html", "unscored",
     "validate_evidence_refs",
     "comment_list", "comment_show",
+    "apply_miro",
 })
 
 COMMENT_COMMANDS = frozenset({"comment_add", "comment_list", "comment_show"})
@@ -1172,6 +1177,293 @@ def cmd_export_html(args):
         print(f"Exported {len(ideas)} ideas → {output_path} ({size_kb} KB)")
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# apply_miro helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+_NOTE_W = 200
+_NOTE_H = 154   # Miro default sticky note height
+_PAD = 20
+_FRAME_HEADER = 60
+_COLS_PER_FRAME = 5
+_FRAME_GAP = 80
+
+_TAG_COLORS = {"SAFE": "light_green", "BOLD": "orange", "WILD": "red"}
+_PHASE_COLORS = {
+    "seed": "light_yellow", "transform": "yellow", "build": "light_blue",
+    "tension": "light_pink", "synthesis": "cyan",
+}
+
+
+def _apply_filter(filter_expr, columns, rows):
+    """Apply comma-separated filter conditions; return matching rows."""
+    if not filter_expr.strip():
+        return list(rows)
+    filtered = list(rows)
+    for cond in filter_expr.split(","):
+        cond = cond.strip()
+        if not cond:
+            continue
+        for op in [">=", "<=", "!=", ">", "<", "="]:
+            if op in cond:
+                col, val = cond.split(op, 1)
+                col, val = col.strip(), val.strip()
+                if col not in columns:
+                    print(f"Warning: filter column '{col}' not found.", file=sys.stderr)
+                    break
+                keep = []
+                for row in filtered:
+                    rv = row.get(col, "")
+                    try:
+                        frv, fval = float(rv), float(val)
+                        match = (
+                            (op == ">"  and frv >  fval) or
+                            (op == ">=" and frv >= fval) or
+                            (op == "<"  and frv <  fval) or
+                            (op == "<=" and frv <= fval) or
+                            (op == "!=" and frv != fval) or
+                            (op == "="  and rv  == val)
+                        )
+                    except (ValueError, TypeError):
+                        match = (op == "=" and rv == val)
+                    if match:
+                        keep.append(row)
+                filtered = keep
+                break
+    return filtered
+
+
+def _miro_api(method, path, token, body=None):
+    """Make a Miro REST API v2 call; return parsed JSON. Exits on HTTP error."""
+    import urllib.request
+    import urllib.error
+    url = f"https://api.miro.com{path}"
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method)
+    req.add_header("Authorization", f"Bearer {token}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="replace")
+        print(f"Miro API error {e.code} {method} {path}: {err_body}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _group_ideas(ideas, group_by):
+    """Return [(group_name, [ideas])] ordered by group name."""
+    if group_by == "none":
+        return [("Ideas", ideas)]
+    groups: dict = {}
+    for idea in ideas:
+        key = idea.get(group_by) or f"(no {group_by})"
+        groups.setdefault(key, []).append(idea)
+    if group_by == "tag":
+        order = ["SAFE", "BOLD", "WILD"]
+        keys = sorted(groups, key=lambda k: (order.index(k) if k in order else 99, k))
+    else:
+        keys = sorted(groups)
+    return [(k, groups[k]) for k in keys]
+
+
+def _sticky_color(idea):
+    tag = idea.get("tag", "")
+    phase = idea.get("phase", "")
+    return _TAG_COLORS.get(tag) or _PHASE_COLORS.get(phase) or "light_yellow"
+
+
+def _sticky_content(idea, score_cols):
+    name = (idea.get("name") or "").strip()
+    desc = (idea.get("description") or "").strip()
+    if len(desc) > 300:
+        desc = desc[:297] + "…"
+    prov_parts = []
+    if idea.get("source_agent"):
+        prov_parts.append(f"agent: {idea['source_agent']}")
+    for sc in score_cols[:3]:
+        v = idea.get(sc, "")
+        if v:
+            prov_parts.append(f"{sc}: {v}")
+    prov = f"[{' · '.join(prov_parts)}]" if prov_parts else ""
+    parts = [f"<p><strong>#{idea['id']} {name}</strong></p>"]
+    if desc:
+        parts.append(f"<p>{desc}</p>")
+    if prov:
+        parts.append(f"<p><em>{prov}</em></p>")
+    return "".join(parts)
+
+
+def cmd_apply_miro(args):
+    """Promote filtered ideas to a new Miro board as sticky notes.
+
+    Design decisions:
+    - Each run creates a NEW board (name gets a UTC timestamp suffix).
+      Updating an existing board in place would require tracking external sticky-note
+      IDs per idea row — complexity that v1 does not need.
+    - Comments are NOT included in sticky notes — they live in the logbook only.
+      Miro is the downstream workshop surface; comments are upstream shaping signal.
+    - Connectors are drawn only between ideas that are BOTH in the filter set.
+    """
+    columns, rows = read_db(args.workspace)
+    ideas = _apply_filter(args.filter, columns, rows)
+
+    if not ideas:
+        print("No ideas match the filter — nothing to apply.", file=sys.stderr)
+        sys.exit(1)
+
+    # Resolve group-by
+    group_by = args.group_by
+    if group_by == "auto":
+        has_tags = any(r.get("tag") for r in ideas)
+        has_phases = any(r.get("phase") for r in ideas)
+        group_by = "tag" if has_tags else ("phase" if has_phases else "none")
+
+    groups = _group_ideas(ideas, group_by)
+    score_cols = [c for c in columns if c not in BUILT_IN_COLUMNS]
+    idea_ids = {r["id"] for r in ideas}
+
+    # Warnings
+    warnings = []
+    for idea in ideas:
+        if not (idea.get("description") or "").strip():
+            warnings.append(f"  #{idea['id']} {idea.get('name', '')} — missing description")
+        seed = idea.get("source_seed", "")
+        if seed and seed not in idea_ids:
+            warnings.append(f"  #{idea['id']} {idea.get('name', '')} — source_seed #{seed} not in filter set (orphan lineage)")
+    if not score_cols:
+        warnings.append("  No score columns found — provenance footers will show agent name only")
+
+    n_frames = len(groups) if group_by != "none" else 0
+    n_notes = len(ideas)
+    n_connectors = sum(
+        1 for r in ideas if r.get("source_seed") and r["source_seed"] in idea_ids
+    )
+
+    # Preview
+    print(f"apply miro —{' DRY RUN' if args.dry_run else ''}")
+    print(f"  Filter    : {args.filter or '(none)'}")
+    print(f"  Board     : {args.board}")
+    print(f"  Group by  : {group_by}")
+    print(f"  Ideas     : {n_notes}")
+    if n_frames:
+        print(f"  Frames    : {n_frames} ({', '.join(g[0] for g in groups)})")
+    print(f"  Connectors: {n_connectors}")
+    if warnings:
+        print(f"  Warnings ({len(warnings)}):")
+        for w in warnings:
+            print(w)
+
+    if args.dry_run:
+        print("\nDry run complete — no Miro API calls made.")
+        return
+
+    # Auth
+    token = os.environ.get("MIRO_API_TOKEN", "").strip()
+    if not token:
+        print("Error: MIRO_API_TOKEN environment variable not set.", file=sys.stderr)
+        sys.exit(1)
+
+    # Board name gets UTC timestamp suffix to prevent accidental duplication
+    ts_suffix = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    board_name = f"{args.board} [{ts_suffix}]"
+    board_data = _miro_api("POST", "/v2/boards", token, {"name": board_name})
+    board_id = board_data["id"]
+    board_url = board_data.get("viewLink") or f"https://miro.com/app/board/{board_id}/"
+    print(f"Created board: {board_url}")
+
+    # Layout: frames side-by-side, sticky notes in a grid inside each frame
+    idea_to_item_id: dict = {}
+    frame_x = 0
+
+    for group_name, group_ideas in groups:
+        n = len(group_ideas)
+        cols = min(_COLS_PER_FRAME, n)
+        row_count = (n + cols - 1) // cols
+        frame_w = cols * (_NOTE_W + _PAD) + _PAD
+        frame_h = row_count * (_NOTE_H + _PAD) + _PAD + _FRAME_HEADER
+
+        frame_item_id = None
+        if group_by != "none":
+            frame_resp = _miro_api("POST", f"/v2/boards/{board_id}/frames", token, {
+                "data": {"title": group_name, "format": "custom", "type": "freeform"},
+                "position": {"x": frame_x, "y": 0},
+                "geometry": {"width": frame_w, "height": frame_h},
+            })
+            frame_item_id = frame_resp["id"]
+            time.sleep(0.12)
+
+        for i, idea in enumerate(group_ideas):
+            col_i = i % cols
+            row_i = i // cols
+            # Position relative to frame top-left when parent is set
+            nx = _PAD + col_i * (_NOTE_W + _PAD) + _NOTE_W / 2
+            ny = _FRAME_HEADER + _PAD + row_i * (_NOTE_H + _PAD) + _NOTE_H / 2
+            # Absolute position when no frame
+            if group_by == "none":
+                all_cols = min(_COLS_PER_FRAME, n_notes)
+                abs_col = i % all_cols
+                abs_row = i // all_cols
+                nx = _PAD + abs_col * (_NOTE_W + _PAD) + _NOTE_W / 2
+                ny = _PAD + abs_row * (_NOTE_H + _PAD) + _NOTE_H / 2
+
+            note_body: dict = {
+                "data": {"content": _sticky_content(idea, score_cols)},
+                "position": {"x": nx, "y": ny, "relativeTo": "parent_top_left"},
+                "geometry": {"width": _NOTE_W},
+                "style": {"fillColor": _sticky_color(idea)},
+            }
+            if frame_item_id:
+                note_body["parent"] = {"id": frame_item_id}
+            else:
+                note_body["position"]["relativeTo"] = "canvas_center"
+
+            note_resp = _miro_api("POST", f"/v2/boards/{board_id}/sticky_notes", token, note_body)
+            idea_to_item_id[idea["id"]] = note_resp["id"]
+            time.sleep(0.12)
+
+        frame_x += frame_w + _FRAME_GAP
+
+    print(f"Created {n_notes} sticky notes" + (f" in {n_frames} frames." if n_frames else "."))
+
+    # Connectors (only between ideas both in the filter set)
+    conn_count = 0
+    for idea in ideas:
+        seed = idea.get("source_seed", "")
+        if (seed and seed in idea_ids
+                and idea["id"] in idea_to_item_id
+                and seed in idea_to_item_id):
+            _miro_api("POST", f"/v2/boards/{board_id}/connectors", token, {
+                "startItem": {"id": idea_to_item_id[seed]},
+                "endItem": {"id": idea_to_item_id[idea["id"]]},
+                "style": {"strokeColor": "#888888", "strokeWidth": "1"},
+            })
+            conn_count += 1
+            time.sleep(0.12)
+
+    if conn_count:
+        print(f"Created {conn_count} connectors.")
+
+    # Log to apply_log.csv
+    log_path = os.path.join(args.workspace, APPLY_LOG_FILENAME)
+    write_header = not os.path.exists(log_path)
+    with open(log_path, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=APPLY_LOG_COLUMNS)
+        if write_header:
+            writer.writeheader()
+        writer.writerow({
+            "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "target": "miro",
+            "filter": args.filter,
+            "board_url": board_url,
+            "idea_count": n_notes,
+        })
+
+    print(f"\nBoard URL : {board_url}")
+    print(f"Logged to : {log_path}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Idea Database for deep-ideation")
     subparsers = parser.add_subparsers(dest="command", help="Command")
@@ -1354,6 +1646,24 @@ def main():
     p.add_argument("workspace")
     p.add_argument("idea_id", type=int)
 
+    # apply_miro
+    p = subparsers.add_parser("apply_miro",
+        help="Promote filtered ideas to a new Miro board as sticky notes. "
+             "Each run always creates a NEW board (name gets a UTC timestamp suffix) "
+             "to avoid accidental duplication. Requires MIRO_API_TOKEN env var.")
+    p.add_argument("workspace")
+    p.add_argument("--filter", default="", dest="filter",
+        help="Comma-separated filter conditions: 'composite_score>7,tag=BOLD'. "
+             "Same syntax as multi_filter. Empty = all ideas.")
+    p.add_argument("--board", required=True,
+        help="Base name for the Miro board to create (timestamp suffix is appended automatically)")
+    p.add_argument("--group-by", default="auto",
+        choices=["tag", "phase", "none", "auto"], dest="group_by",
+        help="Group sticky notes into frames: tag (SAFE/BOLD/WILD), phase, none, "
+             "or auto (default — uses tag if any ideas have tags, else phase, else none)")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run",
+        help="Preview what would be created (counts, warnings) without making any Miro API calls")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -1376,6 +1686,7 @@ def main():
         "comment_list": cmd_comment_list,
         "comment_show": cmd_comment_show,
         "export_html": cmd_export_html,
+        "apply_miro": cmd_apply_miro,
     }
 
     if args.command == "init":
